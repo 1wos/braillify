@@ -1,4 +1,5 @@
-import { css } from '@devup-ui/react'
+import { css, Flex, Image } from '@devup-ui/react'
+import { Text } from '@devup-ui/react'
 
 import { Table, Tbody, Td, Th, Thead, Tr } from '@/components/test-case/table'
 import { TestStatus } from '@/types'
@@ -38,7 +39,18 @@ export function TestCaseTable({ results }: { results: TestStatus[2] }) {
                   textAlign: 'center',
                 })}
               >
-                {isSuccess ? '성공' : '실패'}
+                <Flex alignItems="center" gap="4px">
+                  <Text whiteSpace="nowrap">{isSuccess ? '성공' : '실패'}</Text>
+                  <Image
+                    alt={isSuccess ? 'success' : 'error'}
+                    boxSize="24px"
+                    src={
+                      isSuccess
+                        ? '/images/test-case/success.svg'
+                        : '/images/test-case/error.svg'
+                    }
+                  />
+                </Flex>
               </Td>
             </Tr>
           </TestCaseDisplayBoundary>

@@ -43,13 +43,16 @@ export function Th(props: ComponentProps<typeof Box<'th'>>) {
     <Box
       as="th"
       bg="#2B2B2B"
+      borderBottom="solid 1px #2B2B2B"
       borderRight="solid 1px #EFEEEB"
+      borderTop="solid 1px #2B2B2B"
       color="$base"
       justifyContent="center"
       px="20px"
       py="8px"
       selectors={{
         '&:last-child': {
+          borderRight: 'solid 1px #2B2B2B',
           borderTopRightRadius: '10px',
         },
         '&:first-child': {
