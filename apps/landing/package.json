@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@devup-ui/components": "^0.1.27",
     "@devup-ui/react": "^1.0.21",
     "@mdx-js/loader": "^3.1.0",
     "@mdx-js/react": "^3.1.0",

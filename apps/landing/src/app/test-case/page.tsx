@@ -9,6 +9,7 @@ import { FailedOnlyInput } from '@/components/test-case/FailedOnlyInput'
 import TestCaseCircle from '@/components/test-case/TestCaseCircle'
 import { TestCaseDisplayBoundary } from '@/components/test-case/TestCaseDisplayBoundary'
 import { TestCaseProvider } from '@/components/test-case/TestCaseProvider'
+import { TestCaseTypeToggle } from '@/components/test-case/TestCaseTypeToggle'
 import { TestStatusMap } from '@/types'
 
 export const metadata: Metadata = {
@@ -130,6 +131,11 @@ export default async function TestCasePage() {
         </VStack>
         <VStack gap="40px" px={['16px', null, null, '60px']}>
           <Flex alignItems="center" gap="10px">
+            <Text>목록 형식</Text>
+            <TestCaseTypeToggle />
+            <Text>표 형식</Text>
+          </Flex>
+          <Flex alignItems="center" gap="10px">
             <FailedOnlyInput
               className={css({
                 accentColor: '$primary',
@@ -142,7 +148,6 @@ export default async function TestCasePage() {
             />
             <Text
               as="label"
-              color="$primary"
               cursor="pointer"
               htmlFor="failed-only"
               typography="body"

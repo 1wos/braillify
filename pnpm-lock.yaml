@@ -41,6 +41,9 @@ importers:
 
   apps/landing:
     dependencies:
+      '@devup-ui/components':
+        specifier: ^0.1.27
+        version: 0.1.27(@devup-ui/react@1.0.21(csstype@3.1.3)(react@19.1.1))(csstype@3.1.3)(react@19.1.1)
       '@devup-ui/react':
         specifier: ^1.0.21
         version: 1.0.21(csstype@3.1.3)(react@19.1.1)
@@ -187,6 +190,13 @@ packages:
 
   '@changesets/write@0.4.0':
     resolution: {integrity: sha512-CdTLvIOPiCNuH71pyDu3rA+Q0n65cmAbXnwWH84rKGiFumFzkmHNT8KHTMEchcxN+Kl8I54xGUhJ7l3E7X396Q==}
+
+  '@devup-ui/components@0.1.27':
+    resolution: {integrity: sha512-ZgSVgiR8UGnsiEV1UFHE6Bkz8UbGfa/689TejTUZp7y9sQk277WurzWBRBNjxtHF5A/COcBJ5H6dFu7eCrAVXA==}
+    peerDependencies:
+      '@devup-ui/react': 1.0.21
+      csstype: '*'
+      react: '*'
 
   '@devup-ui/next-plugin@1.0.42':
     resolution: {integrity: sha512-g4ISSOoUlkHW7kzxIuHff8LBktxUJyZsuDi3X/6d8hy7qoVJAFpVBlw9NOc/TqbBLsX/pH81v3E1EVS0l5PGuQ==}
@@ -1150,6 +1160,10 @@ packages:
 
   client-only@0.0.1:
     resolution: {integrity: sha512-IV3Ou0jSMzZrd3pZ48nLkT9DA7Ag1pnPzaiQhpW7c3RbcqqzvzzVu+L8gfqMp/8IM2MQtSiqaCxrrcfu8I8rMA==}
+
+  clsx@2.1.1:
+    resolution: {integrity: sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==}
+    engines: {node: '>=6'}
 
   collapse-white-space@2.1.0:
     resolution: {integrity: sha512-loKTxY1zCOuG4j9f6EPnuyyYkf58RnhhWTvRoZEokgB+WbdXehfjFviyOVYkqzEWz1Q5kRiZdBYS5SwxbQYwzw==}
@@ -3015,6 +3029,13 @@ snapshots:
       human-id: 4.1.1
       prettier: 2.8.8
 
+  '@devup-ui/components@0.1.27(@devup-ui/react@1.0.21(csstype@3.1.3)(react@19.1.1))(csstype@3.1.3)(react@19.1.1)':
+    dependencies:
+      '@devup-ui/react': 1.0.21(csstype@3.1.3)(react@19.1.1)
+      clsx: 2.1.1
+      csstype: 3.1.3
+      react: 19.1.1
+
   '@devup-ui/next-plugin@1.0.42(@devup-ui/webpack-plugin@1.0.41(@devup-ui/wasm@1.0.40))(next@15.5.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1))':
     dependencies:
       '@devup-ui/webpack-plugin': 1.0.41(@devup-ui/wasm@1.0.40)
@@ -3890,6 +3911,8 @@ snapshots:
   ci-info@3.9.0: {}
 
   client-only@0.0.1: {}
+
+  clsx@2.1.1: {}
 
   collapse-white-space@2.1.0: {}
 
