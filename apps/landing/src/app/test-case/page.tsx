@@ -9,6 +9,7 @@ import { TestCaseList } from '@/components/test-case/list/TestCaseList'
 import { TestCaseTable } from '@/components/test-case/table/TestCaseTable'
 import { TestCaseDisplayBoundary } from '@/components/test-case/TestCaseDisplayBoundary'
 import { TestCaseProvider } from '@/components/test-case/TestCaseProvider'
+import { TestCaseStat } from '@/components/test-case/TestCaseStat'
 import { TestCaseTypeBoundary } from '@/components/test-case/TestCaseTypeBoundary'
 import { TestCaseTypeToggle } from '@/components/test-case/TestCaseTypeToggle'
 import { TestStatusMap } from '@/types'
@@ -47,10 +48,16 @@ export default async function TestCasePage() {
           py={['30px', null, null, '40px']}
         >
           <VStack gap="20px">
-            <Text color="$title" typography="docsTitle">
-              {value.title} ({testStatus[key][0] - testStatus[key][1]}/
-              {testStatus[key][0]})
-            </Text>
+            <Flex alignItems="center" gap="20px">
+              <Text color="$title" typography="docsTitle">
+                {value.title}
+              </Text>
+              <TestCaseStat
+                fail={testStatus[key][1]}
+                success={testStatus[key][0] - testStatus[key][1]}
+                total={testStatus[key][0]}
+              />
+            </Flex>
             <Text color="$text" typography="body" wordBreak="keep-all">
               {value.description}
             </Text>
@@ -75,10 +82,17 @@ export default async function TestCasePage() {
           px={['16px', null, null, '60px']}
           py={['30px', null, null, '40px']}
         >
-          <Text color="$title" typography="title">
-            테스트 케이스 ({(totalTest - totalFail).toLocaleString()}/
-            {totalTest.toLocaleString()})
-          </Text>
+          <Flex alignItems="center" gap="20px">
+            <Text color="$title" typography="title">
+              테스트 케이스
+            </Text>
+            <TestCaseStat
+              fail={totalFail}
+              showTotal
+              success={totalTest - totalFail}
+              total={totalTest}
+            />
+          </Flex>
           <Text color="$text" typography="body" wordBreak="keep-all">
             모든 테스트 케이스는{' '}
             <Text
