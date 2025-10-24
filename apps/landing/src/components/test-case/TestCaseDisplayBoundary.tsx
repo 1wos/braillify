@@ -14,14 +14,14 @@ import { TestCaseOptions, useTestCase } from './TestCaseProvider'
  */
 export function TestCaseDisplayBoundary({
   display,
-  filter,
+  option,
   children,
 }: {
   display: boolean
-  filter?: keyof TestCaseOptions
+  option?: keyof TestCaseOptions
   children: React.ReactNode
 }) {
-  const { filters } = useTestCase()
-  if ((filter ? filters[filter] : true) && !display) return null
+  const { options } = useTestCase()
+  if ((option ? options[option] : true) && !display) return null
   return children
 }

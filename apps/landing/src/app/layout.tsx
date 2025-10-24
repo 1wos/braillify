@@ -63,15 +63,6 @@ globalCss({
   '::placeholder': {
     fontFamily: 'Spoqa Han Sans Neo, Arial, Helvetica, sans-serif',
   },
-  'span, label': {
-    color: 'var(--primary)',
-    fontSize: ['14px', null, null, null, '16px'],
-    fontFamily: 'Spoqa Han Sans Neo',
-    fontStyle: 'normal',
-    fontWeight: 500,
-    lineHeight: 1.8,
-    letterSpacing: '-0.06em',
-  },
 })
 
 export default function RootLayout({

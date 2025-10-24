@@ -1,14 +1,18 @@
 'use client'
 
 import { Toggle } from '@devup-ui/components'
-import { ComponentProps, useState } from 'react'
+import { ComponentProps } from 'react'
+
+import { useTestCase } from './TestCaseProvider'
 
 export function TestCaseTypeToggle(props: ComponentProps<typeof Toggle>) {
-  const [type, setType] = useState<'list' | 'table'>('list')
+  const { options, onChangeOptions } = useTestCase()
   return (
     <Toggle
-      onChange={(value) => setType(value ? 'table' : 'list')}
-      value={type === 'table'}
+      onChange={(value) =>
+        onChangeOptions({ ...options, type: value ? 'table' : 'list' })
+      }
+      value={options.type === 'table'}
       {...props}
     />
   )

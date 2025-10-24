@@ -11,11 +11,13 @@ export function FailedOnlyInput(
     'checked' | 'onChange' | 'defaultChecked'
   >,
 ) {
-  const { filters, onChangeFilters } = useTestCase()
+  const { options, onChangeOptions } = useTestCase()
   return (
     <Input
-      checked={filters.failedOnly}
-      onChange={(e) => onChangeFilters({ failedOnly: e.target.checked })}
+      checked={options.failedOnly}
+      onChange={(e) =>
+        onChangeOptions({ ...options, failedOnly: e.target.checked })
+      }
       {...props}
     />
   )

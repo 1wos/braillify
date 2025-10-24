@@ -6,9 +6,11 @@ import { Metadata } from 'next'
 import Latex from 'react-syntax-highlighter/dist/cjs/languages/hljs/latex'
 
 import { FailedOnlyInput } from '@/components/test-case/FailedOnlyInput'
+import { TestCaseTable } from '@/components/test-case/table/TestCaseTable'
 import TestCaseCircle from '@/components/test-case/TestCaseCircle'
 import { TestCaseDisplayBoundary } from '@/components/test-case/TestCaseDisplayBoundary'
 import { TestCaseProvider } from '@/components/test-case/TestCaseProvider'
+import { TestCaseTypeBoundary } from '@/components/test-case/TestCaseTypeBoundary'
 import { TestCaseTypeToggle } from '@/components/test-case/TestCaseTypeToggle'
 import { TestStatusMap } from '@/types'
 
@@ -36,7 +38,7 @@ export default async function TestCasePage() {
       <TestCaseDisplayBoundary
         key={key}
         display={testStatus[key][1] > 0}
-        filter="failedOnly"
+        option="failedOnly"
       >
         <VStack
           key={key}
@@ -55,47 +57,52 @@ export default async function TestCasePage() {
             </Text>
           </VStack>
           <Box bg="$text" h="1px" />
-          <Grid
-            gap="8px"
-            gridTemplateColumns="repeat(auto-fill, minmax(16px, 1fr))"
-          >
-            {testStatus[key][2].map(
-              ([text, expected, actual, isSuccess], idx) => {
-                const textParts = parseTextWithLaTeX(text)
+          <TestCaseTypeBoundary type="table">
+            <TestCaseTable results={testStatus[key][2]} />
+          </TestCaseTypeBoundary>
+          <TestCaseTypeBoundary type="list">
+            <Grid
+              gap="8px"
+              gridTemplateColumns="repeat(auto-fill, minmax(16px, 1fr))"
+            >
+              {testStatus[key][2].map(
+                ([text, expected, actual, isSuccess], idx) => {
+                  const textParts = parseTextWithLaTeX(text)
 
-                return (
-                  <TestCaseDisplayBoundary
-                    key={text + idx}
-                    display={!isSuccess}
-                    filter="failedOnly"
-                  >
-                    <TestCaseCircle key={text + idx} isSuccess={isSuccess}>
-                      <Text
-                        color="#FFF"
-                        typography="body"
-                        whiteSpace="nowrap"
-                        wordBreak="keep-all"
-                      >
-                        {textParts.map((part, partIdx) =>
-                          part.type === 'latex' ? (
-                            <Latex key={partIdx}>${part.content}$</Latex>
-                          ) : (
-                            <span key={partIdx}>{part.content}</span>
-                          ),
-                        )}
-                        <br />
-                        정답 : {expected}
-                        <br />
-                        결과 : {actual}
-                        <br />
-                        {isSuccess ? '✅ 테스트 성공' : '❌ 테스트 실패'}
-                      </Text>
-                    </TestCaseCircle>
-                  </TestCaseDisplayBoundary>
-                )
-              },
-            )}
-          </Grid>
+                  return (
+                    <TestCaseDisplayBoundary
+                      key={text + idx}
+                      display={!isSuccess}
+                      option="failedOnly"
+                    >
+                      <TestCaseCircle key={text + idx} isSuccess={isSuccess}>
+                        <Text
+                          color="#FFF"
+                          typography="body"
+                          whiteSpace="nowrap"
+                          wordBreak="keep-all"
+                        >
+                          {textParts.map((part, partIdx) =>
+                            part.type === 'latex' ? (
+                              <Latex key={partIdx}>${part.content}$</Latex>
+                            ) : (
+                              <span key={partIdx}>{part.content}</span>
+                            ),
+                          )}
+                          <br />
+                          정답 : {expected}
+                          <br />
+                          결과 : {actual}
+                          <br />
+                          {isSuccess ? '✅ 테스트 성공' : '❌ 테스트 실패'}
+                        </Text>
+                      </TestCaseCircle>
+                    </TestCaseDisplayBoundary>
+                  )
+                },
+              )}
+            </Grid>
+          </TestCaseTypeBoundary>
         </VStack>
       </TestCaseDisplayBoundary>
     )
@@ -130,7 +137,12 @@ export default async function TestCasePage() {
           </Text>
         </VStack>
         <VStack gap="40px" px={['16px', null, null, '60px']}>
-          <Flex alignItems="center" gap="10px">
+          <Flex
+            alignItems="center"
+            color="$primary"
+            gap="10px"
+            typography="body"
+          >
             <Text>목록 형식</Text>
             <TestCaseTypeToggle />
             <Text>표 형식</Text>
@@ -148,6 +160,7 @@ export default async function TestCasePage() {
             />
             <Text
               as="label"
+              color="$primary"
               cursor="pointer"
               htmlFor="failed-only"
               typography="body"

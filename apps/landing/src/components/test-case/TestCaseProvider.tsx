@@ -6,12 +6,13 @@ import { TestStatusMap } from '@/types'
 
 export type TestCaseOptions = {
   failedOnly: boolean
+  type: 'list' | 'table'
 }
 
 const TestCaseContext = createContext<{
   testStatusMap: TestStatusMap
-  filters: TestCaseOptions
-  onChangeFilters: (filters: TestCaseOptions) => void
+  options: TestCaseOptions
+  onChangeOptions: (options: TestCaseOptions) => void
 } | null>(null)
 
 export function useTestCase() {
@@ -29,16 +30,17 @@ export function TestCaseProvider({
   testStatusMap: TestStatusMap
   children: React.ReactNode
 }) {
-  const [filters, setFilters] = useState<TestCaseOptions>({
+  const [options, setOptions] = useState<TestCaseOptions>({
     failedOnly: false,
+    type: 'list',
   })
-  const handleChangeFilters = (filters: TestCaseOptions) => {
-    setFilters((prev) => ({ ...prev, ...filters }))
+  const handleChangeOptions = (options: TestCaseOptions) => {
+    setOptions((prev) => ({ ...prev, ...options }))
   }
 
   return (
     <TestCaseContext.Provider
-      value={{ testStatusMap, filters, onChangeFilters: handleChangeFilters }}
+      value={{ testStatusMap, options, onChangeOptions: handleChangeOptions }}
     >
       {children}
     </TestCaseContext.Provider>
