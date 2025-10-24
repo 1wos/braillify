@@ -1,11 +1,15 @@
 import 'katex/dist/katex.min.css'
 
-import { Box, Grid, Text, VStack } from '@devup-ui/react'
+import { Box, css, Flex, Grid, Text, VStack } from '@devup-ui/react'
 import { readFile } from 'fs/promises'
 import { Metadata } from 'next'
-import Latex from 'react-latex-next'
+import Latex from 'react-syntax-highlighter/dist/cjs/languages/hljs/latex'
 
+import { FailedOnlyInput } from '@/components/test-case/FailedOnlyInput'
 import TestCaseCircle from '@/components/test-case/TestCaseCircle'
+import { TestCaseDisplayBoundary } from '@/components/test-case/TestCaseDisplayBoundary'
+import { TestCaseProvider } from '@/components/test-case/TestCaseProvider'
+import { TestStatusMap } from '@/types'
 
 export const metadata: Metadata = {
   alternates: {
@@ -17,18 +21,7 @@ export default async function TestCasePage() {
   const [testStatus, ruleMap] = await Promise.all([
     readFile('../../test_status.json', 'utf-8').then((data) =>
       JSON.parse(data),
-    ) as Promise<
-      Record<
-        string,
-        [
-          success: number,
-          fail: number,
-          Array<
-            [text: string, expected: string, actual: string, isSuccess: boolean]
-          >,
-        ]
-      >
-    >,
+    ) as Promise<TestStatusMap>,
     readFile('../../rule_map.json', 'utf-8').then((data) =>
       JSON.parse(data),
     ) as Promise<Record<string, { title: string; description: string }>>,
@@ -39,91 +32,129 @@ export default async function TestCasePage() {
     totalTest += testStatus[key][0]
     totalFail += testStatus[key][1]
     return (
-      <VStack
+      <TestCaseDisplayBoundary
         key={key}
-        flex="1"
-        gap={['30px', null, null, '40px']}
-        px={['16px', null, null, '60px']}
-        py={['30px', null, null, '40px']}
+        display={testStatus[key][1] > 0}
+        filter="failedOnly"
       >
-        <VStack gap="20px">
-          <Text color="$title" typography="docsTitle">
-            {value.title} ({testStatus[key][0] - testStatus[key][1]}/
-            {testStatus[key][0]})
-          </Text>
-          <Text color="$text" typography="body" wordBreak="keep-all">
-            {value.description}
-          </Text>
-        </VStack>
-        <Box bg="$text" h="1px" />
-        <Grid
-          gap="8px"
-          gridTemplateColumns="repeat(auto-fill, minmax(16px, 1fr))"
+        <VStack
+          key={key}
+          flex="1"
+          gap={['30px', null, null, '40px']}
+          px={['16px', null, null, '60px']}
+          py={['30px', null, null, '40px']}
         >
-          {testStatus[key][2].map(
-            ([text, expected, actual, isSuccess], idx) => {
-              const textParts = parseTextWithLaTeX(text)
+          <VStack gap="20px">
+            <Text color="$title" typography="docsTitle">
+              {value.title} ({testStatus[key][0] - testStatus[key][1]}/
+              {testStatus[key][0]})
+            </Text>
+            <Text color="$text" typography="body" wordBreak="keep-all">
+              {value.description}
+            </Text>
+          </VStack>
+          <Box bg="$text" h="1px" />
+          <Grid
+            gap="8px"
+            gridTemplateColumns="repeat(auto-fill, minmax(16px, 1fr))"
+          >
+            {testStatus[key][2].map(
+              ([text, expected, actual, isSuccess], idx) => {
+                const textParts = parseTextWithLaTeX(text)
 
-              return (
-                <TestCaseCircle key={text + idx} isSuccess={isSuccess}>
-                  <Text
-                    color="#FFF"
-                    typography="body"
-                    whiteSpace="nowrap"
-                    wordBreak="keep-all"
+                return (
+                  <TestCaseDisplayBoundary
+                    key={text + idx}
+                    display={!isSuccess}
+                    filter="failedOnly"
                   >
-                    {textParts.map((part, partIdx) =>
-                      part.type === 'latex' ? (
-                        <Latex key={partIdx}>${part.content}$</Latex>
-                      ) : (
-                        <span key={partIdx}>{part.content}</span>
-                      ),
-                    )}
-                    <br />
-                    정답 : {expected}
-                    <br />
-                    결과 : {actual}
-                    <br />
-                    {isSuccess ? '✅ 테스트 성공' : '❌ 테스트 실패'}
-                  </Text>
-                </TestCaseCircle>
-              )
-            },
-          )}
-        </Grid>
-      </VStack>
+                    <TestCaseCircle key={text + idx} isSuccess={isSuccess}>
+                      <Text
+                        color="#FFF"
+                        typography="body"
+                        whiteSpace="nowrap"
+                        wordBreak="keep-all"
+                      >
+                        {textParts.map((part, partIdx) =>
+                          part.type === 'latex' ? (
+                            <Latex key={partIdx}>${part.content}$</Latex>
+                          ) : (
+                            <span key={partIdx}>{part.content}</span>
+                          ),
+                        )}
+                        <br />
+                        정답 : {expected}
+                        <br />
+                        결과 : {actual}
+                        <br />
+                        {isSuccess ? '✅ 테스트 성공' : '❌ 테스트 실패'}
+                      </Text>
+                    </TestCaseCircle>
+                  </TestCaseDisplayBoundary>
+                )
+              },
+            )}
+          </Grid>
+        </VStack>
+      </TestCaseDisplayBoundary>
     )
   })
 
   return (
-    <Box maxW="1520px" mx="auto" pb="100px" w="100%">
-      <VStack
-        gap="20px"
-        px={['16px', null, null, '60px']}
-        py={['30px', null, null, '40px']}
-      >
-        <Text color="$title" typography="title">
-          테스트 케이스 ({(totalTest - totalFail).toLocaleString()}/
-          {totalTest.toLocaleString()})
-        </Text>
-        <Text color="$text" typography="body" wordBreak="keep-all">
-          모든 테스트 케이스는{' '}
-          <Text
-            _hover={{
-              textDecoration: 'underline',
-            }}
-            as="a"
-            color="$link"
-            href="/2024 개정 한국 점자 규정.pdf"
-            target="_blank"
-          >
-            2024 개정 한국 점자 규정
+    <TestCaseProvider testStatusMap={testStatus}>
+      <Box maxW="1520px" mx="auto" pb="100px" w="100%">
+        <VStack
+          gap="20px"
+          px={['16px', null, null, '60px']}
+          py={['30px', null, null, '40px']}
+        >
+          <Text color="$title" typography="title">
+            테스트 케이스 ({(totalTest - totalFail).toLocaleString()}/
+            {totalTest.toLocaleString()})
           </Text>
-          을 기반으로 작성되었습니다.
-        </Text>
-      </VStack>
-      {cases}
-    </Box>
+          <Text color="$text" typography="body" wordBreak="keep-all">
+            모든 테스트 케이스는{' '}
+            <Text
+              _hover={{
+                textDecoration: 'underline',
+              }}
+              as="a"
+              color="$link"
+              href="/2024 개정 한국 점자 규정.pdf"
+              target="_blank"
+            >
+              2024 개정 한국 점자 규정
+            </Text>
+            을 기반으로 작성되었습니다.
+          </Text>
+        </VStack>
+        <VStack gap="40px" px={['16px', null, null, '60px']}>
+          <Flex alignItems="center" gap="10px">
+            <FailedOnlyInput
+              className={css({
+                accentColor: '$primary',
+                cursor: 'pointer',
+                boxSize: '18px',
+              })}
+              id="failed-only"
+              name="failed-only"
+              type="checkbox"
+            />
+            <Text
+              as="label"
+              color="$primary"
+              cursor="pointer"
+              htmlFor="failed-only"
+              typography="body"
+            >
+              실패한 케이스만 표시하기
+            </Text>
+          </Flex>
+          <Box bg="$text" h="1px" />
+        </VStack>
+        {cases}
+      </Box>
+    </TestCaseProvider>
   )
 }
 
