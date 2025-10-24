@@ -1,6 +1,4 @@
-import './globals.css'
-
-import { Box, css, ThemeScript } from '@devup-ui/react'
+import { Box, css, globalCss, ThemeScript } from '@devup-ui/react'
 import type { Metadata } from 'next'
 
 import Footer from '@/components/Footer'
@@ -47,6 +45,25 @@ export const metadata: Metadata = {
     canonical: '/',
   },
 }
+
+globalCss({
+  imports: ['https://spoqa.github.io/spoqa-han-sans/css/SpoqaHanSansNeo.css'],
+  'html, body': {
+    maxWidth: '100vw',
+    overflowX: 'hidden',
+  },
+  '*': {
+    boxSizing: 'border-box',
+    padding: 0,
+    margin: 0,
+  },
+  a: {
+    color: 'var(--link)',
+  },
+  '::placeholder': {
+    fontFamily: 'Spoqa Han Sans Neo, Arial, Helvetica, sans-serif',
+  },
+})
 
 export default function RootLayout({
   children,
