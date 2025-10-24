@@ -48,7 +48,11 @@ export default async function TestCasePage() {
           py={['30px', null, null, '40px']}
         >
           <VStack gap="20px">
-            <Flex alignItems="center" gap="20px">
+            <Flex
+              alignItems="center"
+              gap="20px"
+              justifyContent={['space-between', null, null, 'flex-start']}
+            >
               <Text color="$title" typography="docsTitle">
                 {value.title}
               </Text>
@@ -62,7 +66,7 @@ export default async function TestCasePage() {
               {value.description}
             </Text>
           </VStack>
-          <Box bg="$text" h="1px" />
+          <Box bg="$text" display={['none', null, null, 'block']} h="1px" />
           <TestCaseTypeBoundary type="table">
             <TestCaseTable results={testStatus[key][2]} />
           </TestCaseTypeBoundary>
@@ -82,7 +86,11 @@ export default async function TestCasePage() {
           px={['16px', null, null, '60px']}
           py={['30px', null, null, '40px']}
         >
-          <Flex alignItems="center" gap="20px">
+          <VStack
+            alignItems={['flex-start', null, null, 'center']}
+            flexDir={[null, null, null, 'row']}
+            gap={['10px', null, null, '20px']}
+          >
             <Text color="$title" typography="title">
               테스트 케이스
             </Text>
@@ -92,7 +100,7 @@ export default async function TestCasePage() {
               success={totalTest - totalFail}
               total={totalTest}
             />
-          </Flex>
+          </VStack>
           <Text color="$text" typography="body" wordBreak="keep-all">
             모든 테스트 케이스는{' '}
             <Text

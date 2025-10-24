@@ -9,7 +9,7 @@ export function Table(props: ComponentProps<typeof Box<'table'>>) {
       flexGrow="0"
       maxW="100%"
       overflow="hidden"
-      w="fit-content"
+      w={['100%', null, null, 'fit-content']}
       {...props}
     />
   )
@@ -76,13 +76,18 @@ export function Td({
       borderBottom="solid 1px #2B2B2B"
       borderRight="solid 1px #2B2B2B"
       justifyContent="center"
-      px="20px"
+      px={[null, null, null, '20px']}
       py="8px"
       selectors={{
         '&:first-child': {
           borderLeft: 'solid 1px #2B2B2B',
         },
+        'tr[data-responsive="desktop"]:first-of-type &, tr[data-responsive="mobile"]:nth-of-type(2) &':
+          {
+            borderTop: 'solid 1px #2B2B2B',
+          },
       }}
+      styleOrder={1}
       typography={typography}
       wordBreak="break-all"
       {...props}
