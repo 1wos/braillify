@@ -1,6 +1,6 @@
 import 'katex/dist/katex.min.css'
 
-import { Box, Grid, Text, VStack } from '@devup-ui/react'
+import { Box, Center, Flex, Grid, Text, VStack } from '@devup-ui/react'
 import { readFile } from 'fs/promises'
 import { Metadata } from 'next'
 import Latex from 'react-latex-next'
@@ -47,10 +47,40 @@ export default async function TestCasePage() {
         py={['30px', null, null, '40px']}
       >
         <VStack gap="20px">
-          <Text color="$title" typography="docsTitle">
-            {value.title} ({testStatus[key][0] - testStatus[key][1]}/
-            {testStatus[key][0]})
-          </Text>
+          <Flex
+            gap="20px"
+            justifyContent={['space-between', null, 'flex-start']}
+          >
+            <Text color="$title" typography="docsTitle">
+              {value.title}
+            </Text>
+            <Center
+              bg="$menuHover"
+              borderRadius="10px"
+              gap="10px"
+              px="16px"
+              py="10px"
+            >
+              <Text color="$text" typography="progress">
+                성공 {testStatus[key][0] - testStatus[key][1]}
+              </Text>
+              <Text color="$primary" typography="progress">
+                실패 {testStatus[key][1]}
+              </Text>
+              <Text
+                color={testStatus[key][1] > 0 ? '$error' : '$success'}
+                typography="progress"
+              >
+                (
+                {(
+                  ((testStatus[key][0] - testStatus[key][1]) /
+                    testStatus[key][0]) *
+                  100
+                ).toFixed(0)}
+                %)
+              </Text>
+            </Center>
+          </Flex>
           <Text color="$text" typography="body" wordBreak="keep-all">
             {value.description}
           </Text>
@@ -102,10 +132,39 @@ export default async function TestCasePage() {
         px={['16px', null, null, '60px']}
         py={['30px', null, null, '40px']}
       >
-        <Text color="$title" typography="title">
-          테스트 케이스 ({(totalTest - totalFail).toLocaleString()}/
-          {totalTest.toLocaleString()})
-        </Text>
+        <VStack
+          flexDir={['column', null, 'row']}
+          gap={['10px', null, '20px']}
+          justifyContent={['space-between', null, 'flex-start']}
+        >
+          <Text color="$title" typography="title">
+            테스트 케이스
+          </Text>
+          <Center
+            bg="$menuHover"
+            borderRadius="10px"
+            gap="10px"
+            justifyContent="flex-start"
+            px="16px"
+            py="10px"
+            w="fit-content"
+          >
+            <Text color="$text" typography="progress">
+              전체 {totalTest.toLocaleString()}
+            </Text>
+            <Text color="$text" typography="progress">
+              성공 {(totalTest - totalFail).toLocaleString()}
+            </Text>
+            <Text color="$error" typography="progress">
+              실패 {totalFail.toLocaleString()}
+            </Text>
+            <Text color="$text" typography="progress">
+              ({(((totalTest - totalFail) / totalTest) * 100).toFixed(0)}
+              %)
+            </Text>
+          </Center>
+        </VStack>
+
         <Text color="$text" typography="body" wordBreak="keep-all">
           모든 테스트 케이스는{' '}
           <Text
