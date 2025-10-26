@@ -1,6 +1,8 @@
 use jauem::choseong::encode_choseong;
 use moeum::jungsong::encode_jungsong;
 use utils::has_choseong_o;
+use once_cell::sync::Lazy;
+use regex::Regex;
 
 use crate::{
     char_struct::CharType,
@@ -10,6 +12,11 @@ use crate::{
     rule_en::{rule_en_10_4, rule_en_10_6},
     split::split_korean_jauem,
 };
+
+static FRACTION_REGEX: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r#"^(\d+)\/(\d+)"#)
+        .expect("Failed to compile FRACTION_REGEX")
+});
 
 mod char_shortcut;
 mod char_struct;
@@ -29,6 +36,7 @@ mod symbol_shortcut;
 mod unicode;
 mod utils;
 mod word_shortcut;
+mod fraction;
 
 pub struct Encoder {
     is_english: bool,
@@ -74,6 +82,16 @@ impl Encoder {
         skip_count: &mut usize,
         result: &mut Vec<u8>,
     ) -> Result<(), String> {
+        if word.starts_with('$') && word.ends_with('$') {
+            if let Some((whole, num, den)) = fraction::parse_latex_fraction(word) {
+                if let Some(w) = whole {
+                    result.extend(fraction::encode_mixed_fraction(&w, &num, &den)?);
+                } else {
+                    result.extend(fraction::encode_fraction(&num, &den)?);
+                }
+                return Ok(());
+            }
+        }
         if let Some((_, code, rest)) = word_shortcut::split_word_shortcut(word) {
             result.extend(code);
             if !rest.is_empty() {
@@ -281,15 +299,44 @@ impl Encoder {
                     }
                     CharType::Number(c) => {
                         if !is_number {
-                            // 제43항 숫자 사이에 마침표, 쉼표, 연결표가 붙어 나올 때에는 뒤의 숫자에 수표를 적지 않는다.
+                            let remaining_word: String = word_chars[i..].iter().collect();
+
+                            if let Some(captures) = FRACTION_REGEX.captures(&remaining_word) {
+                                let numerator = &captures[1];
+                                let denominator = &captures[2];
+                                let match_len = captures[0].len();
+                                let k = i + match_len;
+
+                                let is_date_or_range = 
+                                    (numerator.len() > 1 || denominator.len() > 1) ||
+                                    (k < word_len && word_chars[k] == '/') ||
+                                    (k < word_len && word_chars[k] == '~');
+                                
+                                if !is_date_or_range {
+                                    result.extend(fraction::encode_fraction_in_context(numerator, denominator)?);
+                                    *skip_count = match_len - 1; 
+                                    is_number = true;
+                                    continue;
+                                }
+                            }
+                             // 제43항 숫자 사이에 마침표, 쉼표, 연결표가 붙어 나올 때에는 뒤의 숫자에 수표를 적지 않는다.
                             if !(i > 0 && ['.', ','].contains(&word_chars[i - 1])) {
                                 // 제40항 숫자는 수표 ⠼을 앞세워 다음과 같이 적는다.
                                 result.push(60);
                             }
                             is_number = true;
-                        }
+                        }      
                         result.extend(number::encode_number(c));
-                    }
+                    },
+                    CharType::Fraction(c) => {
+                        if let Some((num_str, den_str)) = fraction::parse_unicode_fraction(c) {
+                            result.extend(fraction::encode_fraction(
+                                &num_str,
+                                &den_str
+                            )?);
+                            is_number = true; 
+                        }
+                    },
                     CharType::Symbol(c) => {
                         if c == ','
                             && is_number
