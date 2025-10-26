@@ -15,18 +15,18 @@ pub(crate) fn should_request_continuation(symbol: char) -> bool {
             | '》'| ')'| ']'| '}'| ','| ':'| ';'| '―')
 }
 
-// 제33항 [다만] : '/', '-', '~' 앞에는 종료표를 강제로 붙인다.
+/// 제33항 [다만] : '/', '-', '~' 앞에는 종료표를 강제로 붙인다.
 pub(crate) fn should_force_terminator_before_symbol(symbol: char) -> bool {
     matches!(symbol, '/' | '-' | '~' | '∼')
 }
 
-// 영어 점자 전용 기호인지 확인.[외국어 점자 일람표의 문장 부호 참고]
+/// 영어 점자 전용 기호인지 확인.[외국어 점자 일람표의 문장 부호 참고]
 pub(crate) fn is_english_symbol(symbol: char) -> bool {
     symbol_shortcut::is_english_symbol_char(symbol)
 }
 
-// 단일 소문자 단어가 연속될 때 연속표가 필요한지 판단한다.
-// [통일 영어 점자 - 5.2 1급 점자 기호표(⠰)] : 글자 a, i, o 앞에는 1급 점자 기호표가 필요하지 않다.
+/// 단일 소문자 단어가 연속될 때 연속표가 필요한지 판단한다.
+/// [통일 영어 점자 - 5.2 1급 점자 기호표(⠰)] : 글자 a, i, o 앞에는 1급 점자 기호표가 필요하지 않다.
 pub(crate) fn requires_single_letter_continuation(letter: char) -> bool {
     letter.is_ascii_lowercase() && !matches!(letter, 'a' | 'i' | 'o')
 }
