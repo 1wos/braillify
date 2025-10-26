@@ -129,3 +129,147 @@ pub(crate) fn should_render_symbol_as_english(
         _ => false,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn requires_single_letter_continuation_distinguishes_letters() {
+        assert!(requires_single_letter_continuation('b'));
+        assert!(!requires_single_letter_continuation('a'));
+        assert!(!requires_single_letter_continuation('A'));
+    }
+
+    #[test]
+    fn skip_and_force_terminator_sets_are_separate() {
+        for symbol in ['.', '?', '!', ')', ']', ','] {
+            assert!(should_skip_terminator_for_symbol(symbol));
+        }
+        for symbol in ['/', '-', '~'] {
+            assert!(should_force_terminator_before_symbol(symbol));
+            assert!(!should_skip_terminator_for_symbol(symbol));
+        }
+        assert!(should_request_continuation('.'));
+        assert!(!should_request_continuation('('));
+    }
+
+    #[test]
+    fn english_symbol_detection_matches_lookup_table() {
+        assert!(is_english_symbol('('));
+        assert!(is_english_symbol(')'));
+        assert!(is_english_symbol(','));
+        assert!(!is_english_symbol('?'));
+    }
+
+    #[test]
+    fn prev_ascii_letter_or_digit_skips_english_symbols() {
+        let word: Vec<char> = "A(,B".chars().collect();
+        assert!(prev_ascii_letter_or_digit(&word, 2));
+
+        let hangul: Vec<char> = "가,".chars().collect();
+        assert!(!prev_ascii_letter_or_digit(&hangul, 1));
+    }
+
+    #[test]
+    fn next_ascii_letter_or_digit_checks_future_ascii() {
+        let contiguous: Vec<char> = "A,B".chars().collect();
+        assert!(next_ascii_letter_or_digit(&contiguous, 1, &[]));
+
+        let with_symbol: Vec<char> = "A,(B".chars().collect();
+        assert!(next_ascii_letter_or_digit(&with_symbol, 1, &[]));
+
+        let with_remaining: Vec<char> = "A,".chars().collect();
+        assert!(next_ascii_letter_or_digit(&with_remaining, 1, &["B"]));
+
+        let hangul: Vec<char> = "A,가".chars().collect();
+        assert!(!next_ascii_letter_or_digit(&hangul, 1, &[]));
+
+        let only_symbols: Vec<char> = "A,".chars().collect();
+        assert!(next_ascii_letter_or_digit(&only_symbols, 1, &["(B"]));
+        assert!(!next_ascii_letter_or_digit(&only_symbols, 1, &["()"]));
+    }
+
+    #[test]
+    fn should_render_symbol_as_english_for_parentheses() {
+        let opener: Vec<char> = "(Hello".chars().collect();
+        assert!(should_render_symbol_as_english(
+            true, false, &[], '(', &opener, 0, &[]
+        ));
+
+        let korean_before: Vec<char> = "가(".chars().collect();
+        assert!(!should_render_symbol_as_english(
+            true,
+            false,
+            &[],
+            '(',
+            &korean_before,
+            1,
+            &["A"]
+        ));
+
+        assert!(!should_render_symbol_as_english(
+            false, false, &[], '(', &opener, 0, &[]
+        ));
+    }
+
+    #[test]
+    fn should_render_symbol_as_english_for_closing_parenthesis() {
+        let closer: Vec<char> = ")".chars().collect();
+        assert!(should_render_symbol_as_english(
+            true,
+            true,
+            &[true],
+            ')',
+            &closer,
+            0,
+            &[]
+        ));
+
+        assert!(!should_render_symbol_as_english(
+            true,
+            true,
+            &[false],
+            ')',
+            &closer,
+            0,
+            &[]
+        ));
+    }
+
+    #[test]
+    fn should_render_symbol_as_english_for_comma_requires_ascii_neighbors() {
+        let word: Vec<char> = "A,B".chars().collect();
+        assert!(should_render_symbol_as_english(
+            true,
+            true,
+            &[],
+            ',',
+            &word,
+            1,
+            &[]
+        ));
+
+        let no_english_context: Vec<char> = "A,B".chars().collect();
+        assert!(!should_render_symbol_as_english(
+            true,
+            false,
+            &[],
+            ',',
+            &no_english_context,
+            1,
+            &[]
+        ));
+
+        let korean_neighbor: Vec<char> = "가,B".chars().collect();
+        assert!(!should_render_symbol_as_english(
+            true,
+            true,
+            &[],
+            ',',
+            &korean_neighbor,
+            1,
+            &[]
+        ));
+    }
+}

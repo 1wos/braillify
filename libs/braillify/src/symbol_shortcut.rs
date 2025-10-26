@@ -160,4 +160,17 @@ mod test {
             &[decode_unicode('⠠'), decode_unicode('⠴')]
         );
     }
+
+    #[test]
+    fn test_encode_english_char_symbol_shortcut_variants() {
+        assert_eq!(
+            encode_english_char_symbol_shortcut('(').unwrap(),
+            &[decode_unicode('⠐'), decode_unicode('⠣')]
+        );
+        assert_eq!(
+            encode_english_char_symbol_shortcut(')').unwrap(),
+            &[decode_unicode('⠐'), decode_unicode('⠜')]
+        );
+        assert_eq!(encode_english_char_symbol_shortcut('?'), None);
+    }
 }

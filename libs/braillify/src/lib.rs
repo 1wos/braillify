@@ -618,7 +618,7 @@ pub fn encode_to_braille_font(text: &str) -> Result<String, String> {
 mod test {
     use std::{collections::HashMap, fs::File};
 
-    use crate::unicode::encode_unicode;
+    use crate::{symbol_shortcut, unicode::encode_unicode};
     use proptest::prelude::*;
 
     use super::*;
@@ -731,6 +731,131 @@ mod test {
             encode_to_unicode("모든 것이 무너진 듯해도").unwrap(),
             "⠑⠥⠊⠵⠀⠸⠎⠕⠀⠑⠍⠉⠎⠨⠟⠀⠊⠪⠄⠚⠗⠊⠥"
         );
+    }
+
+    #[test]
+    fn english_continuation_after_inline_number() {
+        let output = encode("가 a1a").unwrap();
+        assert!(
+            output.contains(&48),
+            "inline number should trigger english continuation indicator"
+        );
+    }
+
+    #[test]
+    fn symbol_triggers_english_segment_at_start() {
+        let output = encode("(A 가").unwrap();
+        let english_symbol = symbol_shortcut::encode_english_char_symbol_shortcut('(').unwrap();
+        assert_eq!(output[0], 52);
+        assert!(output.len() >= 1 + english_symbol.len());
+        assert_eq!(
+            &output[1..1 + english_symbol.len()],
+            english_symbol,
+            "opening english symbol should use english shortcut"
+        );
+    }
+
+    #[test]
+    fn english_symbol_terminator_variants() {
+        let mut encoder = Encoder::new(true);
+        let mut result = Vec::new();
+        let mut skip = 0;
+        encoder
+            .encode_word("a/", "", &[], &mut skip, &mut result)
+            .unwrap();
+        let slash = symbol_shortcut::encode_char_symbol_shortcut('/').unwrap();
+        let slash_pos = result
+            .windows(slash.len())
+            .position(|window| window == slash)
+            .unwrap();
+        assert!(slash_pos > 0);
+        assert_eq!(result[slash_pos - 1], 50, "forced symbol should add terminator");
+
+        let mut encoder = Encoder::new(true);
+        let mut result = Vec::new();
+        let mut skip = 0;
+        encoder
+            .encode_word("a_b", "", &[], &mut skip, &mut result)
+            .unwrap();
+        let underscore = symbol_shortcut::encode_char_symbol_shortcut('_').unwrap();
+        let underscore_pos = result
+            .windows(underscore.len())
+            .position(|window| window == underscore)
+            .unwrap();
+        assert!(underscore_pos > 0);
+        assert_eq!(
+            result[underscore_pos - 1],
+            50,
+            "regular symbol should add terminator when leaving english"
+        );
+    }
+
+    #[test]
+    fn comma_prefix_variants_and_korean_following() {
+        let mut encoder = Encoder::new(true);
+        let mut result = Vec::new();
+        let mut skip = 0;
+        encoder
+            .encode_word("A ,가", "", &[], &mut skip, &mut result)
+            .unwrap();
+        let comma = symbol_shortcut::encode_char_symbol_shortcut(',').unwrap();
+        assert!(
+            result
+                .windows(comma.len())
+                .any(|window| window == comma),
+            "comma before Korean should use Korean punctuation mapping"
+        );
+
+        let mut encoder = Encoder::new(true);
+        let mut result = Vec::new();
+        let mut skip = 0;
+        encoder
+            .encode_word("A!,가", "", &[], &mut skip, &mut result)
+            .unwrap();
+    }
+
+    #[test]
+    fn next_word_single_letter_sets_continuation_flag() {
+        let mut encoder = Encoder::new(true);
+        let mut result = Vec::new();
+        let mut skip = 0;
+        encoder
+            .encode_word("a", "", &["b"], &mut skip, &mut result)
+            .unwrap();
+        assert!(encoder.needs_english_continuation);
+        assert_eq!(result.last(), Some(&0));
+    }
+
+    #[test]
+    fn next_word_symbol_rules_apply() {
+        let mut encoder = Encoder::new(true);
+        let mut result = Vec::new();
+        let mut skip = 0;
+        encoder
+            .encode_word("a", "", &["/"], &mut skip, &mut result)
+            .unwrap();
+        assert!(
+            result.contains(&50),
+            "forced symbol should insert terminator between words"
+        );
+        assert!(!encoder.is_english);
+
+        let mut encoder = Encoder::new(true);
+        let mut result = Vec::new();
+        let mut skip = 0;
+        encoder
+            .encode_word("a", "", &["."], &mut skip, &mut result)
+            .unwrap();
+        assert!(
+            encoder.needs_english_continuation,
+            "skip symbol should request continuation"
+        );
+    }
+
+    #[test]
+    fn next_word_with_invalid_char_returns_error() {
+        let err = encode("가 a 😀");
+        assert!(err.is_err());
     }
 
     #[test]
