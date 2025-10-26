@@ -11,3 +11,7 @@ coverage
 cobertura.xml
 codecov
 codecov.*
+.DS_Store
+._.DS_Store 
+**/.DS_Store 
+**/._.DS_Store
