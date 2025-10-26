@@ -219,6 +219,10 @@
     "title": "59항",
     "description": "쌍반점(;)은 ⠰⠆으로 적으며, 앞은 붙여 쓰고 뒤는 한 칸 띄어 쓴다."
   },
+  "rule_63": {
+    "title": "63항",
+    "description": "긴소리표(ː)는 ⠰⠂으로 적고, 앞뒤를 붙여 쓴다."
+  },
   "sentence": {
     "title": "문장",
     "description": "테스트를 위한 문장"
