@@ -47,7 +47,7 @@ export default async function TestCasePage() {
         value={testStatus[key][1]}
       >
         {/* @todo 필터 관련 JSON 및 상태 관련 처리 */}
-        <TestCaseDisplayBoundary option="filters" value="korean">
+        <TestCaseDisplayBoundary option="filters" value={key}>
           <Box
             bg="$text"
             display={isBut ? 'none' : 'block'}
