@@ -15,8 +15,8 @@ export function TestCaseList({ results }: { results: TestStatus[2] }) {
         return (
           <TestCaseDisplayBoundary
             key={text + idx}
-            display={!isSuccess}
             option="failedOnly"
+            value={Number(!isSuccess)}
           >
             <TestCaseCircle key={text + idx} isSuccess={isSuccess}>
               <Text

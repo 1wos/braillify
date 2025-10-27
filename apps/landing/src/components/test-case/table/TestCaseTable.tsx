@@ -24,8 +24,8 @@ export function TestCaseTable({ results }: { results: TestStatus[2] }) {
         {results.map(([text, expected, actual, isSuccess], index) => (
           <TestCaseDisplayBoundary
             key={index}
-            display={!isSuccess}
             option="failedOnly"
+            value={Number(!isSuccess)}
           >
             <Tr
               key={index + 'desktop'}

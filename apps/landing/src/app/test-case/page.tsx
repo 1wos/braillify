@@ -13,7 +13,6 @@ import { TestCaseFilterContainer } from '@/components/test-case/TestCaseFilterCo
 import { TestCaseProvider } from '@/components/test-case/TestCaseProvider'
 import { TestCaseRuleContainer } from '@/components/test-case/TestCaseRuleContainer'
 import { TestCaseStat } from '@/components/test-case/TestCaseStat'
-import { TestCaseTypeBoundary } from '@/components/test-case/TestCaseTypeBoundary'
 import { TestCaseTypeToggle } from '@/components/test-case/TestCaseTypeToggle'
 import { TEST_CASE_FILTERS } from '@/constants'
 import { TestStatusMap } from '@/types'
@@ -44,42 +43,45 @@ export default async function TestCasePage() {
     return (
       <TestCaseDisplayBoundary
         key={key}
-        display={testStatus[key][1] > 0}
         option="failedOnly"
+        value={testStatus[key][1]}
       >
-        <Box
-          bg="$text"
-          display={isBut ? 'none' : 'block'}
-          h="1px"
-          mx={['16px', null, null, '60px']}
-        />
-        <TestCaseRuleContainer key={key} exception={isBut}>
-          <VStack gap="20px">
-            <Flex
-              alignItems="center"
-              gap="20px"
-              justifyContent={['space-between', null, null, 'flex-start']}
-            >
-              <Text color="$title" typography="docsTitle">
-                {value.title}
+        {/* @todo 필터 관련 JSON 및 상태 관련 처리 */}
+        <TestCaseDisplayBoundary option="filters" value="korean">
+          <Box
+            bg="$text"
+            display={isBut ? 'none' : 'block'}
+            h="1px"
+            mx={['16px', null, null, '60px']}
+          />
+          <TestCaseRuleContainer key={key} exception={isBut}>
+            <VStack gap="20px">
+              <Flex
+                alignItems="center"
+                gap="20px"
+                justifyContent={['space-between', null, null, 'flex-start']}
+              >
+                <Text color="$title" typography="docsTitle">
+                  {value.title}
+                </Text>
+                <TestCaseStat
+                  fail={testStatus[key][1]}
+                  success={testStatus[key][0] - testStatus[key][1]}
+                  total={testStatus[key][0]}
+                />
+              </Flex>
+              <Text color="$text" typography="body" wordBreak="keep-all">
+                {value.description}
               </Text>
-              <TestCaseStat
-                fail={testStatus[key][1]}
-                success={testStatus[key][0] - testStatus[key][1]}
-                total={testStatus[key][0]}
-              />
-            </Flex>
-            <Text color="$text" typography="body" wordBreak="keep-all">
-              {value.description}
-            </Text>
-          </VStack>
-          <TestCaseTypeBoundary type="table">
-            <TestCaseTable results={testStatus[key][2]} />
-          </TestCaseTypeBoundary>
-          <TestCaseTypeBoundary type="list">
-            <TestCaseList results={testStatus[key][2]} />
-          </TestCaseTypeBoundary>
-        </TestCaseRuleContainer>
+            </VStack>
+            <TestCaseDisplayBoundary option="type" value="table">
+              <TestCaseTable results={testStatus[key][2]} />
+            </TestCaseDisplayBoundary>
+            <TestCaseDisplayBoundary option="type" value="list">
+              <TestCaseList results={testStatus[key][2]} />
+            </TestCaseDisplayBoundary>
+          </TestCaseRuleContainer>
+        </TestCaseDisplayBoundary>
       </TestCaseDisplayBoundary>
     )
   })
