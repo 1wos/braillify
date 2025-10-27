@@ -15,6 +15,7 @@ import { TestCaseRuleContainer } from '@/components/test-case/TestCaseRuleContai
 import { TestCaseStat } from '@/components/test-case/TestCaseStat'
 import { TestCaseTypeBoundary } from '@/components/test-case/TestCaseTypeBoundary'
 import { TestCaseTypeToggle } from '@/components/test-case/TestCaseTypeToggle'
+import { TEST_CASE_FILTERS } from '@/constants'
 import { TestStatusMap } from '@/types'
 
 export const metadata: Metadata = {
@@ -130,14 +131,11 @@ export default async function TestCasePage() {
             justifyContent={[null, null, null, 'space-between']}
           >
             <Flex gap="10px" overflowX="auto" scrollbarWidth="none" w="100%">
-              <TestCaseFilter value="korean">한글</TestCaseFilter>
-              <TestCaseFilter value="math">수학</TestCaseFilter>
-              <TestCaseFilter value="science">과학</TestCaseFilter>
-              <TestCaseFilter value="music">음악</TestCaseFilter>
-              <TestCaseFilter value="western">서양</TestCaseFilter>
-              <TestCaseFilter value="foreign-language">외국어</TestCaseFilter>
-              <TestCaseFilter value="ipa">국제음성기호</TestCaseFilter>
-              <TestCaseFilter value="corpus">말뭉치</TestCaseFilter>
+              {TEST_CASE_FILTERS.map((filter) => (
+                <TestCaseFilter key={filter.value} value={filter.value}>
+                  {filter.label}
+                </TestCaseFilter>
+              ))}
             </Flex>
             <Flex
               alignItems="center"
