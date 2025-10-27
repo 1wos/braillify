@@ -4,7 +4,18 @@ import { createContext, useContext, useState } from 'react'
 
 import { TestStatusMap } from '@/types'
 
+export type TestCaseFilter =
+  | 'korean'
+  | 'math'
+  | 'science'
+  | 'music'
+  | 'western'
+  | 'foreign-language'
+  | 'ipa'
+  | 'corpus'
+
 export type TestCaseOptions = {
+  filters: TestCaseFilter[]
   failedOnly: boolean
   type: 'list' | 'table'
 }
@@ -12,7 +23,7 @@ export type TestCaseOptions = {
 const TestCaseContext = createContext<{
   testStatusMap: TestStatusMap
   options: TestCaseOptions
-  onChangeOptions: (options: TestCaseOptions) => void
+  onChangeOptions: (options: Partial<TestCaseOptions>) => void
 } | null>(null)
 
 export function useTestCase() {
@@ -31,10 +42,11 @@ export function TestCaseProvider({
   children: React.ReactNode
 }) {
   const [options, setOptions] = useState<TestCaseOptions>({
+    filters: ['korean'],
     failedOnly: false,
     type: 'list',
   })
-  const handleChangeOptions = (options: TestCaseOptions) => {
+  const handleChangeOptions = (options: Partial<TestCaseOptions>) => {
     setOptions((prev) => ({ ...prev, ...options }))
   }
 

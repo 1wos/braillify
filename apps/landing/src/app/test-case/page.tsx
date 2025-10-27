@@ -5,6 +5,7 @@ import { readFile } from 'fs/promises'
 import { Metadata } from 'next'
 
 import { FailedOnlyInput } from '@/components/test-case/FailedOnlyInput'
+import { TestCaseFilter } from '@/components/test-case/filter/TestCaseFilter'
 import { TestCaseList } from '@/components/test-case/list/TestCaseList'
 import { TestCaseTable } from '@/components/test-case/table/TestCaseTable'
 import { TestCaseDisplayBoundary } from '@/components/test-case/TestCaseDisplayBoundary'
@@ -122,16 +123,34 @@ export default async function TestCasePage() {
           </Text>
         </VStack>
         <TestCaseFilterContainer>
-          <Flex
-            alignItems="center"
-            color="$primary"
-            gap="10px"
-            typography="body"
+          <VStack
+            alignItems={['flex-end', null, null, 'center']}
+            flexDir={['column-reverse', null, null, 'row']}
+            gap="12px"
+            justifyContent={[null, null, null, 'space-between']}
           >
-            <Text>목록 형식</Text>
-            <TestCaseTypeToggle />
-            <Text>표 형식</Text>
-          </Flex>
+            <Flex gap="10px" overflowX="auto" scrollbarWidth="none" w="100%">
+              <TestCaseFilter value="korean">한글</TestCaseFilter>
+              <TestCaseFilter value="math">수학</TestCaseFilter>
+              <TestCaseFilter value="science">과학</TestCaseFilter>
+              <TestCaseFilter value="music">음악</TestCaseFilter>
+              <TestCaseFilter value="western">서양</TestCaseFilter>
+              <TestCaseFilter value="foreign-language">외국어</TestCaseFilter>
+              <TestCaseFilter value="ipa">국제음성기호</TestCaseFilter>
+              <TestCaseFilter value="corpus">말뭉치</TestCaseFilter>
+            </Flex>
+            <Flex
+              alignItems="center"
+              color="$primary"
+              gap="10px"
+              typography="body"
+              whiteSpace="nowrap"
+            >
+              <Text>목록 형식</Text>
+              <TestCaseTypeToggle />
+              <Text>표 형식</Text>
+            </Flex>
+          </VStack>
           <Flex alignItems="center" gap="10px">
             <FailedOnlyInput
               className={css({
