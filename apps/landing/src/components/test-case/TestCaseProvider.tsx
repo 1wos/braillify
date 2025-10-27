@@ -20,8 +20,11 @@ export type TestCaseOptions = {
   type: 'list' | 'table'
 }
 
+export type FilterMap = Record<TestCaseFilter, string[]>
+
 const TestCaseContext = createContext<{
   testStatusMap: TestStatusMap
+  filterMap: FilterMap
   options: TestCaseOptions
   onChangeOptions: (options: Partial<TestCaseOptions>) => void
 } | null>(null)
@@ -36,9 +39,11 @@ export function useTestCase() {
 
 export function TestCaseProvider({
   testStatusMap,
+  filterMap,
   children,
 }: {
   testStatusMap: TestStatusMap
+  filterMap: FilterMap
   children: React.ReactNode
 }) {
   const [options, setOptions] = useState<TestCaseOptions>({
@@ -52,7 +57,12 @@ export function TestCaseProvider({
 
   return (
     <TestCaseContext.Provider
-      value={{ testStatusMap, options, onChangeOptions: handleChangeOptions }}
+      value={{
+        filterMap,
+        onChangeOptions: handleChangeOptions,
+        options,
+        testStatusMap,
+      }}
     >
       {children}
     </TestCaseContext.Provider>

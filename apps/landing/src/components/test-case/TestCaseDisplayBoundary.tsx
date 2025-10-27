@@ -2,8 +2,6 @@
 
 import { useMemo } from 'react'
 
-import { FILTER_MAP } from '@/constants'
-
 import { TestCaseOptions, useTestCase } from './TestCaseProvider'
 
 export type TestFailCount = number
@@ -27,13 +25,13 @@ export function TestCaseDisplayBoundary<T extends keyof TestCaseOptions>({
   option: T
   children: React.ReactNode
 }) {
-  const { options } = useTestCase()
+  const { options, filterMap } = useTestCase()
 
   const shouldRender = useMemo(() => {
     switch (option) {
       case 'filters':
         return options.filters.some((filter) =>
-          FILTER_MAP[filter].includes(value as string),
+          filterMap[filter].includes(value as string),
         )
       case 'failedOnly':
         return options.failedOnly ? (value as TestFailCount) > 0 : true
@@ -42,7 +40,7 @@ export function TestCaseDisplayBoundary<T extends keyof TestCaseOptions>({
       default:
         return false
     }
-  }, [option, value, options])
+  }, [option, value, options, filterMap])
 
   if (!shouldRender) return null
   return children

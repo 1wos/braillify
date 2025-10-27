@@ -29,65 +29,32 @@ export const TEST_CASE_FILTERS: { label: string; value: TestCaseFilter }[] = [
   },
 ]
 
+/**
+ * Create a filter map based on rule_map.json keys.
+ * Automatically includes newly added rules.
+ * @param ruleMapKeys - Array of rule keys from rule_map.json
+ * @returns Filter map grouped by categories
+ */
+export function createFilterMap(
+  ruleMapKeys: string[],
+): Record<TestCaseFilter, string[]> {
+  // Default all rules to korean category
+  // Can be extended with category field in rule_map.json for classification
+  return {
+    korean: ruleMapKeys,
+    math: [],
+    science: [],
+    music: [],
+    western: [],
+    'foreign-language': [],
+    ipa: [],
+    corpus: [],
+  }
+}
+
+// Default FILTER_MAP for backward compatibility (legacy migration support)
 export const FILTER_MAP: Record<TestCaseFilter, string[]> = {
-  korean: [
-    'rule_1',
-    'rule_10',
-    'rule_11',
-    'rule_11_b1',
-    'rule_12',
-    'rule_12_b1',
-    'rule_13',
-    'rule_14',
-    'rule_14_b1',
-    'rule_15',
-    'rule_16',
-    'rule_17',
-    'rule_18',
-    'rule_18_b1',
-    'rule_1_b1',
-    'rule_2',
-    'rule_28',
-    'rule_29',
-    'rule_3',
-    'rule_33',
-    'rule_33_b1',
-    'rule_34',
-    'rule_35',
-    'rule_4',
-    'rule_40',
-    'rule_41',
-    'rule_42',
-    'rule_43',
-    'rule_43_b1',
-    'rule_44',
-    'rule_44_b1',
-    'rule_45',
-    'rule_46',
-    'rule_47',
-    'rule_48',
-    'rule_49',
-    'rule_5',
-    'rule_50',
-    'rule_51',
-    'rule_51_b1',
-    'rule_51_b2',
-    'rule_52',
-    'rule_53',
-    'rule_53_b1',
-    'rule_54',
-    'rule_55',
-    'rule_55_b1',
-    'rule_56',
-    'rule_57',
-    'rule_58',
-    'rule_59',
-    'rule_6',
-    'rule_7',
-    'rule_8',
-    'rule_9',
-    'sentence',
-  ],
+  korean: [],
   math: [],
   science: [],
   music: [],
