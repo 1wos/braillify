@@ -115,6 +115,10 @@ mod test {
             CharType::KoreanPart('ㄱ')
         ));
         assert!(matches!(CharType::new(' ').unwrap(), CharType::Space(' ')));
+        assert!(matches!(
+            CharType::new('½').unwrap(), 
+            CharType::Fraction('½')
+        ));
     }
 
     proptest! {

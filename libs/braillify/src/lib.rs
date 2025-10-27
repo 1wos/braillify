@@ -599,6 +599,10 @@ mod test {
             encode_to_unicode("모든 것이 무너진 듯해도").unwrap(),
             "⠑⠥⠊⠵⠀⠸⠎⠕⠀⠑⠍⠉⠎⠨⠟⠀⠊⠪⠄⠚⠗⠊⠥"
         );
+        assert_eq!(encode_to_unicode("$\\frac{3}{4}$").unwrap(), "⠼⠙⠌⠼⠉");
+        assert_eq!(encode_to_unicode("$3\\frac{1}{4}$").unwrap(), "⠼⠉⠼⠙⠌⠼⠁");
+        assert_eq!(encode_to_unicode("1/2").unwrap(), "⠼⠁⠸⠌⠼⠃");
+        assert_eq!(encode_to_unicode("½").unwrap(), "⠼⠃⠌⠼⠁");
     }
 
     #[test]
