@@ -27,12 +27,16 @@ export function TestCaseFilter({
 
   return (
     <Center
-      _active={{
-        bg: '$menuActive',
-      }}
-      _hover={{
-        bg: '$menuHover',
-      }}
+      _active={
+        !isSelected && {
+          bg: '$menuActive',
+        }
+      }
+      _hover={
+        !isSelected && {
+          bg: '$menuHover',
+        }
+      }
       bg={isSelected ? '$primary' : null}
       border="solid 1px #2B2B2B"
       borderRadius="1000px"

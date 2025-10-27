@@ -12,6 +12,9 @@ export function TestCaseTypeToggle(props: ComponentProps<typeof Toggle>) {
       onChange={(value) =>
         onChangeOptions({ ...options, type: value ? 'table' : 'list' })
       }
+      style={{
+        backgroundColor: 'var(--primary)',
+      }}
       value={options.type === 'table'}
       {...props}
     />
