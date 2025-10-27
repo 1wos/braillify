@@ -8,7 +8,9 @@ import { FailedOnlyInput } from '@/components/test-case/FailedOnlyInput'
 import { TestCaseList } from '@/components/test-case/list/TestCaseList'
 import { TestCaseTable } from '@/components/test-case/table/TestCaseTable'
 import { TestCaseDisplayBoundary } from '@/components/test-case/TestCaseDisplayBoundary'
+import { TestCaseFilterContainer } from '@/components/test-case/TestCaseFilterContainer'
 import { TestCaseProvider } from '@/components/test-case/TestCaseProvider'
+import { TestCaseRuleContainer } from '@/components/test-case/TestCaseRuleContainer'
 import { TestCaseStat } from '@/components/test-case/TestCaseStat'
 import { TestCaseTypeBoundary } from '@/components/test-case/TestCaseTypeBoundary'
 import { TestCaseTypeToggle } from '@/components/test-case/TestCaseTypeToggle'
@@ -34,19 +36,22 @@ export default async function TestCasePage() {
   const cases = Object.entries(ruleMap).map(([key, value]) => {
     totalTest += testStatus[key][0]
     totalFail += testStatus[key][1]
+
+    const isBut = value.title.includes('다만')
+
     return (
       <TestCaseDisplayBoundary
         key={key}
         display={testStatus[key][1] > 0}
         option="failedOnly"
       >
-        <VStack
-          key={key}
-          flex="1"
-          gap={['30px', null, null, '40px']}
-          px={['16px', null, null, '60px']}
-          py={['30px', null, null, '40px']}
-        >
+        <Box
+          bg="$text"
+          display={isBut ? 'none' : 'block'}
+          h="1px"
+          mx={['16px', null, null, '60px']}
+        />
+        <TestCaseRuleContainer key={key} exception={isBut}>
           <VStack gap="20px">
             <Flex
               alignItems="center"
@@ -66,21 +71,20 @@ export default async function TestCasePage() {
               {value.description}
             </Text>
           </VStack>
-          <Box bg="$text" display={['none', null, null, 'block']} h="1px" />
           <TestCaseTypeBoundary type="table">
             <TestCaseTable results={testStatus[key][2]} />
           </TestCaseTypeBoundary>
           <TestCaseTypeBoundary type="list">
             <TestCaseList results={testStatus[key][2]} />
           </TestCaseTypeBoundary>
-        </VStack>
+        </TestCaseRuleContainer>
       </TestCaseDisplayBoundary>
     )
   })
 
   return (
     <TestCaseProvider testStatusMap={testStatus}>
-      <Box maxW="1520px" mx="auto" pb="100px" w="100%">
+      <Box maxW="1520px" mx="auto" pb="40px" w="100%">
         <VStack
           gap="20px"
           px={['16px', null, null, '60px']}
@@ -117,7 +121,7 @@ export default async function TestCasePage() {
             을 기반으로 작성되었습니다.
           </Text>
         </VStack>
-        <VStack gap="12px" px={['16px', null, null, '60px']}>
+        <TestCaseFilterContainer>
           <Flex
             alignItems="center"
             color="$primary"
@@ -149,9 +153,9 @@ export default async function TestCasePage() {
               실패한 케이스만 표시하기
             </Text>
           </Flex>
-        </VStack>
-        <Box bg="$text" h="1px" mt="40px" mx={['16px', null, null, '60px']} />
+        </TestCaseFilterContainer>
         {cases}
+        <Box bg="$text" h="1px" mx={['16px', null, null, '60px']} />
       </Box>
     </TestCaseProvider>
   )
