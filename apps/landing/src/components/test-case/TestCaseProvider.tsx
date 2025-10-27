@@ -57,7 +57,12 @@ export function TestCaseProvider({
 
   return (
     <TestCaseContext.Provider
-      value={{ testStatusMap, filterMap, options, onChangeOptions: handleChangeOptions }}
+      value={{
+        filterMap,
+        onChangeOptions: handleChangeOptions,
+        options,
+        testStatusMap,
+      }}
     >
       {children}
     </TestCaseContext.Provider>

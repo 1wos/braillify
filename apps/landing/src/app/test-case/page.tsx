@@ -14,7 +14,7 @@ import { TestCaseProvider } from '@/components/test-case/TestCaseProvider'
 import { TestCaseRuleContainer } from '@/components/test-case/TestCaseRuleContainer'
 import { TestCaseStat } from '@/components/test-case/TestCaseStat'
 import { TestCaseTypeToggle } from '@/components/test-case/TestCaseTypeToggle'
-import { TEST_CASE_FILTERS, createFilterMap } from '@/constants'
+import { createFilterMap, TEST_CASE_FILTERS } from '@/constants'
 import { TestStatusMap } from '@/types'
 
 export const metadata: Metadata = {
@@ -32,7 +32,7 @@ export default async function TestCasePage() {
       JSON.parse(data),
     ) as Promise<Record<string, { title: string; description: string }>>,
   ])
-  
+
   // Dynamically create filter map based on rule_map keys
   const filterMap = createFilterMap(Object.keys(ruleMap))
   let totalTest = 0
@@ -90,7 +90,7 @@ export default async function TestCasePage() {
   })
 
   return (
-    <TestCaseProvider testStatusMap={testStatus} filterMap={filterMap}>
+    <TestCaseProvider filterMap={filterMap} testStatusMap={testStatus}>
       <Box maxW="1520px" mx="auto" pb="40px" w="100%">
         <VStack
           gap="20px"

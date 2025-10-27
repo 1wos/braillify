@@ -35,7 +35,9 @@ export const TEST_CASE_FILTERS: { label: string; value: TestCaseFilter }[] = [
  * @param ruleMapKeys - Array of rule keys from rule_map.json
  * @returns Filter map grouped by categories
  */
-export function createFilterMap(ruleMapKeys: string[]): Record<TestCaseFilter, string[]> {
+export function createFilterMap(
+  ruleMapKeys: string[],
+): Record<TestCaseFilter, string[]> {
   // Default all rules to korean category
   // Can be extended with category field in rule_map.json for classification
   return {
