@@ -23,6 +23,7 @@ mod char_struct;
 #[cfg(feature = "cli")]
 pub mod cli;
 mod english;
+mod english_logic;
 mod jauem;
 mod korean_char;
 mod korean_part;
@@ -43,6 +44,8 @@ pub struct Encoder {
     triple_big_english: bool,
     english_indicator: bool,
     has_processed_word: bool,
+    needs_english_continuation: bool,
+    parenthesis_stack: Vec<bool>,
 }
 
 impl Encoder {
@@ -52,7 +55,24 @@ impl Encoder {
             is_english: false,
             triple_big_english: false,
             has_processed_word: false,
+            needs_english_continuation: false,
+            parenthesis_stack: Vec::new(),
         }
+    }
+
+    fn exit_english(&mut self, needs_continuation: bool) {
+        self.is_english = false;
+        self.needs_english_continuation = needs_continuation;
+    }
+
+    fn enter_english(&mut self, result: &mut Vec<u8>) {
+        if self.needs_english_continuation {
+            result.push(48);
+        } else {
+            result.push(52);
+        }
+        self.is_english = true;
+        self.needs_english_continuation = false;
     }
 
     pub fn encode(&mut self, text: &str, result: &mut Vec<u8>) -> Result<(), String> {
@@ -102,19 +122,30 @@ impl Encoder {
             let word_chars = word.chars().collect::<Vec<char>>();
             let word_len = word_chars.len();
             // 단어 전체가 대문자인지 확인(타 언어인 경우 반드시 false)
-            let is_all_uppercase = word_chars.iter().all(|c| c.is_uppercase());
+            let uppercase_stats = word_chars.iter().filter(|c| c.is_ascii_alphabetic()).fold(
+                (0, 0),
+                |(letters, uppers), ch| {
+                    (letters + 1, uppers + if ch.is_uppercase() { 1 } else { 0 })
+                },
+            );
+            let is_all_uppercase = uppercase_stats.0 >= 2 && uppercase_stats.0 == uppercase_stats.1;
             let has_korean_char = word_chars
                 .iter()
                 .any(|c| 0xAC00 <= *c as u32 && *c as u32 <= 0xD7A3);
 
-            if self.english_indicator && !self.is_english && word_chars[0].is_ascii_alphabetic() {
+            let has_ascii_alphabetic = word_chars.iter().any(|c| c.is_ascii_alphabetic());
+            let mut pending_english_start =
+                self.english_indicator && !self.is_english && has_ascii_alphabetic;
+            if pending_english_start && word_chars[0].is_ascii_alphabetic() {
                 // 제31항 국어 문장 안에 그리스 문자가 나올 때에는 그 앞에 로마자표 ⠴을 적고 그 뒤에 로마자 종료표 ⠲을 적는다
-
-                self.is_english = true;
-                result.push(52);
+                self.enter_english(result);
+                pending_english_start = false;
             }
 
-            if is_all_uppercase && !self.triple_big_english {
+            let first_ascii_index = word_chars.iter().position(|c| c.is_ascii_alphabetic());
+            let ascii_starts_at_beginning = matches!(first_ascii_index, Some(0));
+
+            if is_all_uppercase && !self.triple_big_english && ascii_starts_at_beginning {
                 if (!self.has_processed_word || !prev_word.chars().all(|c| c.is_ascii_alphabetic()))
                     && remaining_words.len() >= 2
                     && remaining_words[0].chars().all(|c| c.is_ascii_alphabetic())
@@ -125,9 +156,9 @@ impl Encoder {
                     result.push(32);
                     result.push(32);
                 } else if word_len >= 2 {
-                    // 28항 [붙임] 로마자가 한 글자만 대문자일 때에는 대문자 기호표 ⠠을 그 앞에 적고, 단
-                    // 어 전체가 대문자이거나 두 글자 이상 연속해서 대문자일 때에는 대문자 단어표
-                    // ⠠을 그 앞에 적는다. 세 개 이상의 연속된 단어가 모두 대문자일 때에는 첫 단어
+                    // 28항 [붙임] 로마자가 한 글자만 대문자일 때에는 대문자 기호표 ⠠을 그 앞에 적고, 
+                    // 단어 전체가 대문자이거나 두 글자 이상 연속해서 대문자일 때에는 대문자 단어표 ⠠⠠을 그 앞에 적는다.
+                    // 세 개 이상의 연속된 단어가 모두 대문자일 때에는 첫 단어
                     // 앞에 대문자 구절표 ⠠⠠⠠을 적고, 마지막 단어 뒤에 대문자 종료표 ⠠⠄을 적는다.
                     result.push(32);
                     result.push(32);
@@ -136,7 +167,6 @@ impl Encoder {
 
             let mut is_number = false;
             let mut is_big_english = false;
-            // let mut over_three_big_english = false;
 
             for (i, c) in word_chars.iter().enumerate() {
                 if *skip_count > 0 {
@@ -144,22 +174,64 @@ impl Encoder {
                     continue;
                 }
 
+                if pending_english_start
+                    && (c.is_ascii_alphabetic()
+                        || (english_logic::should_render_symbol_as_english(
+                            self.english_indicator,
+                            self.is_english,
+                            &self.parenthesis_stack,
+                            *c,
+                            &word_chars,
+                            i,
+                            remaining_words,
+                        ) && !self.needs_english_continuation))
+                {
+                    self.enter_english(result);
+                    pending_english_start = false;
+                }
+
                 let char_type = CharType::new(*c)?;
 
-                if self.english_indicator && i > 0 && !c.is_ascii_alphabetic() {
-                    // 제31항 국어 문장 안에 그리스 문자가 나올 때에는 그 앞에 로마자표 ⠴을 적고 그 뒤에 로마자 종료표 ⠲을 적는다
-                    if self.is_english {
-                        // 제33항 ｢통일영어점자 규정｣과 ｢한글 점자｣의 점형이 다른 문장 부호(, : ; ―)가 로마자와 한글 사이에 나올 때에는 로마자 종료표를 적지 않고 문장 부호는 「한글 점자」에 따라 적는다.
-                        // 제34항 로마자가 따옴표나 괄호 등으로 묶일 때에는 로마자 종료표를 적지 않는다.
-                        if !['"', ')', '('].contains(c) && ![',', ':', ';', '―'].contains(c) {
+                if self.english_indicator && self.is_english {
+                    match &char_type {
+                        CharType::English(_) => {}
+                        CharType::Number(_) => {
+                            // 제35항 로마자와 숫자가 이어 나올 때에는 로마자 종료표를 적지 않는다.
+                            // 숫자 뒤에 로마자가 이어질 경우 연속표가 필요하므로 종료표 대신
+                            // 연속표 플래그만 설정한다.
+                            self.exit_english(true);
+                        }
+                        CharType::Symbol(sym) => {
+                            if english_logic::should_render_symbol_as_english(
+                                self.english_indicator,
+                                self.is_english,
+                                &self.parenthesis_stack,
+                                *sym,
+                                &word_chars,
+                                i,
+                                remaining_words,
+                            ) {
+                                // 영어 문장 부호는 로마자 구간을 유지한다.
+                            } else if english_logic::should_force_terminator_before_symbol(*sym) {
+                                result.push(50);
+                                self.exit_english(false);
+                            } else if !english_logic::should_skip_terminator_for_symbol(*sym) {
+                                result.push(50);
+                                self.exit_english(false);
+                            } else {
+                                self.exit_english(english_logic::should_request_continuation(*sym));
+                            }
+                        }
+                        _ => {
                             result.push(50);
+                            self.exit_english(false);
                         }
                     }
-                    self.is_english = false;
                 }
 
                 match char_type {
                     CharType::Korean(korean) => {
+                        self.needs_english_continuation = false;
                         if is_number
                             && (['ㄴ', 'ㄷ', 'ㅁ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'].contains(&korean.cho)
                                 || *c == '운')
@@ -199,6 +271,7 @@ impl Encoder {
                         }
                     }
                     CharType::KoreanPart(c) => {
+                        self.needs_english_continuation = false;
                         match word_len {
                             1 => {
                                 // 8항 - 단독으로 쓰인 자모
@@ -250,11 +323,10 @@ impl Encoder {
                     CharType::English(c) => {
                         if self.english_indicator && !self.is_english {
                             // 제31항 국어 문장 안에 그리스 문자가 나올 때에는 그 앞에 로마자표 ⠴을 적고 그 뒤에 로마자 종료표 ⠲을 적는다
-
-                            result.push(52);
+                            self.enter_english(result);
                         }
 
-                        if (!is_all_uppercase || word_len < 2)
+                        if (!is_all_uppercase || word_len < 2 || !ascii_starts_at_beginning)
                             && !is_big_english
                             && c.is_uppercase()
                         {
@@ -272,9 +344,11 @@ impl Encoder {
                             }
                         }
                         if !self.is_english || i == 0 {
-                            if let Some((code, len)) = rule_en_10_6(
-                                &word_chars[i..].iter().collect::<String>().to_lowercase(),
-                            ) {
+                            if !is_all_uppercase
+                                && let Some((code, len)) = rule_en_10_6(
+                                    &word_chars[i..].iter().collect::<String>().to_lowercase(),
+                                )
+                            {
                                 result.push(code);
                                 *skip_count = len;
                             } else if !is_all_uppercase
@@ -296,6 +370,7 @@ impl Encoder {
                             result.push(english::encode_english(c)?);
                         }
                         self.is_english = true;
+                        self.needs_english_continuation = false;
                     }
                     CharType::Number(c) => {
                         if !is_number {
@@ -338,13 +413,72 @@ impl Encoder {
                         }
                     },
                     CharType::Symbol(c) => {
-                        if c == ','
-                            && is_number
-                            && i < word_len - 1
-                            && word_chars[i + 1].is_numeric()
+                        let mut use_english_symbol = english_logic::should_render_symbol_as_english(
+                            self.english_indicator,
+                            self.is_english,
+                            &self.parenthesis_stack,
+                            c,
+                            &word_chars,
+                            i,
+                            remaining_words,
+                        );
+
+                        if c == '(' {
+                            self.parenthesis_stack.push(use_english_symbol);
+                        } else if c == ')' {
+                            use_english_symbol =
+                                self.parenthesis_stack.pop().unwrap_or(use_english_symbol);
+                        }
+
+                        if self.english_indicator
+                            && (self.is_english || pending_english_start)
+                            && use_english_symbol
                         {
-                            // 제41항 숫자 사이에 붙어 나오는 쉼표와 자릿점은 ⠂으로 적는다.
+                            result.extend(
+                                symbol_shortcut::encode_english_char_symbol_shortcut(c).unwrap(),
+                            );
+                            continue;
+                        }
+
+                        let mut has_numeric_prefix = false;
+                        let mut has_ascii_prefix = false;
+                        if c == ',' {
+                            let mut j = i;
+                            while j > 0 {
+                                let prev = word_chars[j - 1];
+                                if prev.is_ascii_digit() {
+                                    has_numeric_prefix = true;
+                                    break;
+                                } else if prev.is_ascii_alphabetic() {
+                                    has_ascii_prefix = true;
+                                    break;
+                                } else if prev == ' ' {
+                                    j -= 1;
+                                } else {
+                                    break;
+                                }
+                            }
+                        }
+
+                        let next_char = if i + 1 < word_len {
+                            Some(word_chars[i + 1])
+                        } else {
+                            remaining_words.first().and_then(|w| w.chars().next())
+                        };
+                        let next_is_digit = next_char.is_some_and(|ch| ch.is_ascii_digit());
+                        let next_is_ascii = next_char.is_some_and(|ch| ch.is_ascii_alphabetic());
+                        let next_is_korean = next_char.is_some_and(|ch| utils::is_korean_char(ch));
+                        let next_is_alphanumeric = next_is_digit || next_is_ascii;
+
+                        if c == ','
+                            && (((is_number || has_numeric_prefix) && next_is_digit)
+                                || (has_ascii_prefix && next_is_alphanumeric))
+                        {
+                            // 제41항 숫자 또는 로마자 구간에서 쉼표는 ⠂으로 적는다.
                             result.push(2);
+                        } else if c == ',' && next_is_korean {
+                            // 제33항: 로마자와 한글 사이의 문장부호는 한글 점자 규정을 따른다.
+                            result.extend(symbol_shortcut::encode_char_symbol_shortcut(c)?);
                         } else {
                             // 제58항 빠짐표가 여러 개 붙어 나올 때에는 _과 l 사이에 7을 묵자의 개수만큼적어 나타낸다.
                             if c == '□' {
@@ -417,18 +551,63 @@ impl Encoder {
             self.triple_big_english = false; // Reset after adding terminator
         }
         if !remaining_words.is_empty() {
-            if self.english_indicator
-                && !remaining_words[0]
-                    .chars()
-                    .next()
-                    .unwrap()
-                    .is_ascii_alphabetic()
-            {
-                // 제31항 국어 문장 안에 그리스 문자가 나올 때에는 그 앞에 로마자표 ⠴을 적고 그 뒤에 로마자 종료표 ⠲을 적는다
-                if self.is_english {
-                    result.push(50);
+            if self.english_indicator && self.is_english {
+                if let Some(next_word) = remaining_words.first() {
+                    let ascii_letters = next_word
+                        .chars()
+                        .filter(|c| c.is_ascii_alphabetic())
+                        .collect::<Vec<_>>();
+                    let has_invalid_symbol = next_word.chars().any(|ch| {
+                        !(ch.is_ascii_alphabetic()
+                            || english_logic::is_english_symbol(ch)
+                            || symbol_shortcut::is_symbol_char(ch)
+                            || utils::is_korean_char(ch))
+                    });
+                    let is_single_letter_word = ascii_letters.len() == 1
+                        && !next_word.chars().any(|ch| ch.is_ascii_digit())
+                        && !has_invalid_symbol;
+
+                    if is_single_letter_word
+                        && english_logic::requires_single_letter_continuation(ascii_letters[0])
+                    {
+                        self.exit_english(true);
+                    } else if let Some(next_char) = next_word.chars().next() {
+                        if let Ok(next_type) = CharType::new(next_char) {
+                            match next_type {
+                                CharType::English(_) | CharType::Number(_) => {}
+                                CharType::Symbol(sym) => {
+                                    if self.english_indicator
+                                        && self.is_english
+                                        && english_logic::is_english_symbol(sym)
+                                    {
+                                        // 연속되는 영어 구절 사이에 오는 영어 문장 부호는
+                                        // 로마자 구간을 유지한다.
+                                    } else if english_logic::should_force_terminator_before_symbol(
+                                        sym,
+                                    ) {
+                                        result.push(50);
+                                        self.exit_english(false);
+                                    } else if !english_logic::should_skip_terminator_for_symbol(sym)
+                                    {
+                                        result.push(50);
+                                        self.exit_english(false);
+                                    } else {
+                                        self.exit_english(
+                                            english_logic::should_request_continuation(sym),
+                                        );
+                                    }
+                                }
+                                _ => {
+                                    result.push(50);
+                                    self.exit_english(false);
+                                }
+                            }
+                        } else {
+                            result.push(50);
+                            self.exit_english(false);
+                        }
+                    }
                 }
-                self.is_english = false;
             }
 
             result.push(0);
@@ -486,7 +665,7 @@ pub fn encode_to_braille_font(text: &str) -> Result<String, String> {
 mod test {
     use std::{collections::HashMap, fs::File};
 
-    use crate::unicode::encode_unicode;
+    use crate::{symbol_shortcut, unicode::encode_unicode};
     use proptest::prelude::*;
 
     use super::*;
@@ -603,6 +782,131 @@ mod test {
         assert_eq!(encode_to_unicode("$3\\frac{1}{4}$").unwrap(), "⠼⠉⠼⠙⠌⠼⠁");
         assert_eq!(encode_to_unicode("1/2").unwrap(), "⠼⠁⠸⠌⠼⠃");
         assert_eq!(encode_to_unicode("½").unwrap(), "⠼⠃⠌⠼⠁");
+    }
+
+    #[test]
+    fn english_continuation_after_inline_number() {
+        let output = encode("가 a1a").unwrap();
+        assert!(
+            output.contains(&48),
+            "inline number should trigger english continuation indicator"
+        );
+    }
+
+    #[test]
+    fn symbol_triggers_english_segment_at_start() {
+        let output = encode("(A 가").unwrap();
+        let english_symbol = symbol_shortcut::encode_english_char_symbol_shortcut('(').unwrap();
+        assert_eq!(output[0], 52);
+        assert!(output.len() >= 1 + english_symbol.len());
+        assert_eq!(
+            &output[1..1 + english_symbol.len()],
+            english_symbol,
+            "opening english symbol should use english shortcut"
+        );
+    }
+
+    #[test]
+    fn english_symbol_terminator_variants() {
+        let mut encoder = Encoder::new(true);
+        let mut result = Vec::new();
+        let mut skip = 0;
+        encoder
+            .encode_word("a/", "", &[], &mut skip, &mut result)
+            .unwrap();
+        let slash = symbol_shortcut::encode_char_symbol_shortcut('/').unwrap();
+        let slash_pos = result
+            .windows(slash.len())
+            .position(|window| window == slash)
+            .unwrap();
+        assert!(slash_pos > 0);
+        assert_eq!(result[slash_pos - 1], 50, "forced symbol should add terminator");
+
+        let mut encoder = Encoder::new(true);
+        let mut result = Vec::new();
+        let mut skip = 0;
+        encoder
+            .encode_word("a_b", "", &[], &mut skip, &mut result)
+            .unwrap();
+        let underscore = symbol_shortcut::encode_char_symbol_shortcut('_').unwrap();
+        let underscore_pos = result
+            .windows(underscore.len())
+            .position(|window| window == underscore)
+            .unwrap();
+        assert!(underscore_pos > 0);
+        assert_eq!(
+            result[underscore_pos - 1],
+            50,
+            "regular symbol should add terminator when leaving english"
+        );
+    }
+
+    #[test]
+    fn comma_prefix_variants_and_korean_following() {
+        let mut encoder = Encoder::new(true);
+        let mut result = Vec::new();
+        let mut skip = 0;
+        encoder
+            .encode_word("A ,가", "", &[], &mut skip, &mut result)
+            .unwrap();
+        let comma = symbol_shortcut::encode_char_symbol_shortcut(',').unwrap();
+        assert!(
+            result
+                .windows(comma.len())
+                .any(|window| window == comma),
+            "comma before Korean should use Korean punctuation mapping"
+        );
+
+        let mut encoder = Encoder::new(true);
+        let mut result = Vec::new();
+        let mut skip = 0;
+        encoder
+            .encode_word("A!,가", "", &[], &mut skip, &mut result)
+            .unwrap();
+    }
+
+    #[test]
+    fn next_word_single_letter_sets_continuation_flag() {
+        let mut encoder = Encoder::new(true);
+        let mut result = Vec::new();
+        let mut skip = 0;
+        encoder
+            .encode_word("a", "", &["b"], &mut skip, &mut result)
+            .unwrap();
+        assert!(encoder.needs_english_continuation);
+        assert_eq!(result.last(), Some(&0));
+    }
+
+    #[test]
+    fn next_word_symbol_rules_apply() {
+        let mut encoder = Encoder::new(true);
+        let mut result = Vec::new();
+        let mut skip = 0;
+        encoder
+            .encode_word("a", "", &["/"], &mut skip, &mut result)
+            .unwrap();
+        assert!(
+            result.contains(&50),
+            "forced symbol should insert terminator between words"
+        );
+        assert!(!encoder.is_english);
+
+        let mut encoder = Encoder::new(true);
+        let mut result = Vec::new();
+        let mut skip = 0;
+        encoder
+            .encode_word("a", "", &["."], &mut skip, &mut result)
+            .unwrap();
+        assert!(
+            encoder.needs_english_continuation,
+            "skip symbol should request continuation"
+        );
+    }
+
+    #[test]
+    fn next_word_with_invalid_char_returns_error() {
+        let err = encode("가 a 😀");
+        assert!(err.is_err());
     }
 
     #[test]
@@ -745,7 +1049,7 @@ mod test {
                     println!("파일: {}, 라인 {}: '{}'", filename, line_num, input);
                     println!("  예상: {}", expected);
                     println!("  실제: {}", actual);
-                    println!("  유니코드 Result: {}", unicode);
+                    println!("  유니코드 Result:   {}", unicode);
                     println!("  유니코드 Expected: {}", braille);
                 } else {
                     let mut colored_input = String::new();
@@ -768,7 +1072,7 @@ mod test {
                     println!("파일: {}, 라인 {}: '{}'", filename, line_num, colored_input);
                     println!("  예상: {}", expected);
                     println!("  실제: {}", actual);
-                    println!("  유니코드 Result: {}", colored_unicode);
+                    println!("  유니코드 Result:   {}", colored_unicode);
                     println!("  유니코드 Expected: {}", braille);
                 }
                 println!();
