@@ -1,11 +1,21 @@
 import 'katex/dist/katex.min.css'
 
-import { Box, Grid, Text, VStack } from '@devup-ui/react'
+import { Box, css, Flex, Text, VStack } from '@devup-ui/react'
 import { readFile } from 'fs/promises'
 import { Metadata } from 'next'
-import Latex from 'react-latex-next'
 
-import TestCaseCircle from '@/components/test-case/TestCaseCircle'
+import { FailedOnlyInput } from '@/components/test-case/FailedOnlyInput'
+import { TestCaseFilter } from '@/components/test-case/filter/TestCaseFilter'
+import { TestCaseList } from '@/components/test-case/list/TestCaseList'
+import { TestCaseTable } from '@/components/test-case/table/TestCaseTable'
+import { TestCaseDisplayBoundary } from '@/components/test-case/TestCaseDisplayBoundary'
+import { TestCaseFilterContainer } from '@/components/test-case/TestCaseFilterContainer'
+import { TestCaseProvider } from '@/components/test-case/TestCaseProvider'
+import { TestCaseRuleContainer } from '@/components/test-case/TestCaseRuleContainer'
+import { TestCaseStat } from '@/components/test-case/TestCaseStat'
+import { TestCaseTypeToggle } from '@/components/test-case/TestCaseTypeToggle'
+import { createFilterMap, TEST_CASE_FILTERS } from '@/constants'
+import { TestStatusMap } from '@/types'
 
 export const metadata: Metadata = {
   alternates: {
@@ -17,159 +27,158 @@ export default async function TestCasePage() {
   const [testStatus, ruleMap] = await Promise.all([
     readFile('../../test_status.json', 'utf-8').then((data) =>
       JSON.parse(data),
-    ) as Promise<
-      Record<
-        string,
-        [
-          success: number,
-          fail: number,
-          Array<
-            [text: string, expected: string, actual: string, isSuccess: boolean]
-          >,
-        ]
-      >
-    >,
+    ) as Promise<TestStatusMap>,
     readFile('../../rule_map.json', 'utf-8').then((data) =>
       JSON.parse(data),
     ) as Promise<Record<string, { title: string; description: string }>>,
   ])
+
+  // Dynamically create filter map based on rule_map keys
+  const filterMap = createFilterMap(Object.keys(ruleMap))
   let totalTest = 0
   let totalFail = 0
   const cases = Object.entries(ruleMap).map(([key, value]) => {
     totalTest += testStatus[key][0]
     totalFail += testStatus[key][1]
-    return (
-      <VStack
-        key={key}
-        flex="1"
-        gap={['30px', null, null, '40px']}
-        px={['16px', null, null, '60px']}
-        py={['30px', null, null, '40px']}
-      >
-        <VStack gap="20px">
-          <Text color="$title" typography="docsTitle">
-            {value.title} ({testStatus[key][0] - testStatus[key][1]}/
-            {testStatus[key][0]})
-          </Text>
-          <Text color="$text" typography="body" wordBreak="keep-all">
-            {value.description}
-          </Text>
-        </VStack>
-        <Box bg="$text" h="1px" />
-        <Grid
-          gap="8px"
-          gridTemplateColumns="repeat(auto-fill, minmax(16px, 1fr))"
-        >
-          {testStatus[key][2].map(
-            ([text, expected, actual, isSuccess], idx) => {
-              const textParts = parseTextWithLaTeX(text)
 
-              return (
-                <TestCaseCircle key={text + idx} isSuccess={isSuccess}>
-                  <Text
-                    color="#FFF"
-                    typography="body"
-                    whiteSpace="nowrap"
-                    wordBreak="keep-all"
-                  >
-                    {textParts.map((part, partIdx) =>
-                      part.type === 'latex' ? (
-                        <Latex key={partIdx}>${part.content}$</Latex>
-                      ) : (
-                        <span key={partIdx}>{part.content}</span>
-                      ),
-                    )}
-                    <br />
-                    정답 : {expected}
-                    <br />
-                    결과 : {actual}
-                    <br />
-                    {isSuccess ? '✅ 테스트 성공' : '❌ 테스트 실패'}
-                  </Text>
-                </TestCaseCircle>
-              )
-            },
-          )}
-        </Grid>
-      </VStack>
+    const isBut = value.title.includes('다만')
+
+    return (
+      <TestCaseDisplayBoundary
+        key={key}
+        option="failedOnly"
+        value={testStatus[key][1]}
+      >
+        {/* @todo 필터 관련 JSON 및 상태 관련 처리 */}
+        <TestCaseDisplayBoundary option="filters" value={key}>
+          <Box
+            bg="$text"
+            display={isBut ? 'none' : 'block'}
+            h="1px"
+            mx={['16px', null, null, '60px']}
+          />
+          <TestCaseRuleContainer key={key} exception={isBut}>
+            <VStack gap="20px">
+              <Flex
+                alignItems="center"
+                gap="20px"
+                justifyContent={['space-between', null, null, 'flex-start']}
+              >
+                <Text color="$title" typography="docsTitle">
+                  {value.title}
+                </Text>
+                <TestCaseStat
+                  fail={testStatus[key][1]}
+                  success={testStatus[key][0] - testStatus[key][1]}
+                  total={testStatus[key][0]}
+                />
+              </Flex>
+              <Text color="$text" typography="body" wordBreak="keep-all">
+                {value.description}
+              </Text>
+            </VStack>
+            <TestCaseDisplayBoundary option="type" value="table">
+              <TestCaseTable results={testStatus[key][2]} />
+            </TestCaseDisplayBoundary>
+            <TestCaseDisplayBoundary option="type" value="list">
+              <TestCaseList results={testStatus[key][2]} />
+            </TestCaseDisplayBoundary>
+          </TestCaseRuleContainer>
+        </TestCaseDisplayBoundary>
+      </TestCaseDisplayBoundary>
     )
   })
 
   return (
-    <Box maxW="1520px" mx="auto" pb="100px" w="100%">
-      <VStack
-        gap="20px"
-        px={['16px', null, null, '60px']}
-        py={['30px', null, null, '40px']}
-      >
-        <Text color="$title" typography="title">
-          테스트 케이스 ({(totalTest - totalFail).toLocaleString()}/
-          {totalTest.toLocaleString()})
-        </Text>
-        <Text color="$text" typography="body" wordBreak="keep-all">
-          모든 테스트 케이스는{' '}
-          <Text
-            _hover={{
-              textDecoration: 'underline',
-            }}
-            as="a"
-            color="$link"
-            href="/2024 개정 한국 점자 규정.pdf"
-            target="_blank"
+    <TestCaseProvider filterMap={filterMap} testStatusMap={testStatus}>
+      <Box maxW="1520px" mx="auto" pb="40px" w="100%">
+        <VStack
+          gap="20px"
+          px={['16px', null, null, '60px']}
+          py={['30px', null, null, '40px']}
+        >
+          <VStack
+            alignItems={['flex-start', null, null, 'center']}
+            flexDir={[null, null, null, 'row']}
+            gap={['10px', null, null, '20px']}
           >
-            2024 개정 한국 점자 규정
+            <Text color="$title" typography="title">
+              테스트 케이스
+            </Text>
+            <TestCaseStat
+              fail={totalFail}
+              showTotal
+              success={totalTest - totalFail}
+              total={totalTest}
+            />
+          </VStack>
+          <Text color="$text" typography="body" wordBreak="keep-all">
+            모든 테스트 케이스는{' '}
+            <Text
+              _hover={{
+                textDecoration: 'underline',
+              }}
+              as="a"
+              color="$link"
+              href="/2024 개정 한국 점자 규정.pdf"
+              target="_blank"
+            >
+              2024 개정 한국 점자 규정
+            </Text>
+            을 기반으로 작성되었습니다.
           </Text>
-          을 기반으로 작성되었습니다.
-        </Text>
-      </VStack>
-      {cases}
-    </Box>
+        </VStack>
+        <TestCaseFilterContainer>
+          <VStack
+            alignItems={['flex-end', null, null, 'center']}
+            flexDir={['column-reverse', null, null, 'row']}
+            gap="12px"
+            justifyContent={[null, null, null, 'space-between']}
+          >
+            <Flex gap="10px" overflowX="auto" scrollbarWidth="none" w="100%">
+              {TEST_CASE_FILTERS.map((filter) => (
+                <TestCaseFilter key={filter.value} value={filter.value}>
+                  {filter.label}
+                </TestCaseFilter>
+              ))}
+            </Flex>
+            <Flex
+              alignItems="center"
+              color="$primary"
+              gap="10px"
+              typography="body"
+              whiteSpace="nowrap"
+            >
+              <Text>목록 형식</Text>
+              <TestCaseTypeToggle />
+              <Text>표 형식</Text>
+            </Flex>
+          </VStack>
+          <Flex alignItems="center" gap="10px">
+            <FailedOnlyInput
+              className={css({
+                accentColor: '$primary',
+                cursor: 'pointer',
+                boxSize: '18px',
+              })}
+              id="failed-only"
+              name="failed-only"
+              type="checkbox"
+            />
+            <Text
+              as="label"
+              color="$primary"
+              cursor="pointer"
+              htmlFor="failed-only"
+              typography="body"
+            >
+              실패한 케이스만 표시하기
+            </Text>
+          </Flex>
+        </TestCaseFilterContainer>
+        {cases}
+        <Box bg="$text" h="1px" mx={['16px', null, null, '60px']} />
+      </Box>
+    </TestCaseProvider>
   )
-}
-
-/**
- * This function parses text with LaTeX expressions and returns an array of parts.
- * It assumes that LaTeX is wrapped in double dollar delimiters ($$...$$).
- * Note that single dollar delimiters ($...$) are not rendered.
- * @param input - The input text to parse.
- * @returns An array of parts, where each part is either a text or a LaTeX expression.
- */
-const parseTextWithLaTeX = (input: string) => {
-  const parts: Array<{
-    type: 'text' | 'latex'
-    content: string
-  }> = []
-  const latexRegex = /\$\$([^$]+(?:\$(?!\$)[^$]*)*)\$\$/g
-  let lastIndex = 0
-  let match
-
-  while ((match = latexRegex.exec(input)) !== null) {
-    // if there is text before the LaTeX expression, add it as a text part:
-    if (match.index > lastIndex) {
-      const textContent = input.slice(lastIndex, match.index)
-      if (textContent) {
-        parts.push({ type: 'text', content: textContent })
-      }
-    }
-
-    // add the LaTeX expression from double dollars:
-    const latexContent = match[1]
-    parts.push({ type: 'latex', content: latexContent })
-    lastIndex = match.index + match[0].length
-  }
-
-  // add remaining text after the last LaTeX expression:
-  if (lastIndex < input.length) {
-    const remainingText = input.slice(lastIndex)
-    if (remainingText) {
-      parts.push({ type: 'text', content: remainingText })
-    }
-  }
-
-  // if no LaTeX found, return the original text as a single text part:
-  if (!parts.length) {
-    parts.push({ type: 'text', content: input })
-  }
-
-  return parts
 }
