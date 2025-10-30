@@ -1,4 +1,4 @@
-import { Grid, Text } from '@devup-ui/react'
+import { Box, Grid, Text } from '@devup-ui/react'
 import Latex from 'react-syntax-highlighter/dist/cjs/languages/hljs/latex'
 
 import { TestStatus } from '@/types'
@@ -19,26 +19,23 @@ export function TestCaseList({ results }: { results: TestStatus[2] }) {
             value={Number(!isSuccess)}
           >
             <TestCaseCircle key={text + idx} isSuccess={isSuccess}>
-              <Text
-                color="#FFF"
-                typography="body"
-                whiteSpace="nowrap"
-                wordBreak="keep-all"
-              >
-                {textParts.map((part, partIdx) =>
-                  part.type === 'latex' ? (
-                    <Latex key={partIdx}>${part.content}$</Latex>
-                  ) : (
-                    <span key={partIdx}>{part.content}</span>
-                  ),
-                )}
-                <br />
-                정답 : {expected}
-                <br />
-                결과 : {actual}
-                <br />
-                {isSuccess ? '✅ 테스트 성공' : '❌ 테스트 실패'}
-              </Text>
+              <Box minW="50vw" w="100%" whiteSpace="pre-wrap">
+                <Text color="#FFF" typography="body">
+                  {textParts.map((part, partIdx) =>
+                    part.type === 'latex' ? (
+                      <Latex key={partIdx}>${part.content}$</Latex>
+                    ) : (
+                      <span key={partIdx}>{part.content}</span>
+                    ),
+                  )}
+                  <br />
+                  정답 : <Text wordBreak="break-all">{expected}</Text>
+                  <br />
+                  결과 : <Text wordBreak="break-all">{actual}</Text>
+                  <br />
+                  {isSuccess ? '✅ 테스트 성공' : '❌ 테스트 실패'}
+                </Text>
+              </Box>
             </TestCaseCircle>
           </TestCaseDisplayBoundary>
         )

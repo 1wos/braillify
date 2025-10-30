@@ -4,15 +4,8 @@ import { VStack } from '@devup-ui/react'
 import { useRef, useState } from 'react'
 import { useEffect } from 'react'
 
-export default function Tooltip({
-  children,
-  isOpen,
-}: {
-  children: React.ReactNode
-  isOpen: boolean
-}) {
+export default function Tooltip({ children }: { children: React.ReactNode }) {
   const [viewportWidth, setViewportWidth] = useState(0)
-  const [tooltipRect, setTooltipRect] = useState<DOMRect | null>(null)
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -30,22 +23,36 @@ export default function Tooltip({
     }
   }, [])
 
-  useEffect(() => {
-    if (ref.current) {
-      setTooltipRect(ref.current.getBoundingClientRect())
-    }
-  }, [isOpen])
-
   return (
     <VStack
-      ref={ref}
+      ref={(el) => {
+        if (!el) return
+
+        ref.current = el
+
+        const mo = new ResizeObserver((entries) => {
+          entries.forEach((entry) => {
+            const target = entry.target as HTMLDivElement
+            const x = target.offsetLeft
+            const width = target.offsetWidth
+            if (x + width > viewportWidth) {
+              target.style.right = '16px'
+            }
+          })
+        })
+
+        mo.observe(el)
+
+        return () => mo.disconnect()
+      }}
       _groupHover={{
-        display: isOpen ? 'flex' : 'none',
+        display: 'flex',
       }}
       bg="rgba(0, 0, 0, 0.75)"
       borderRadius="4px"
       display="none"
       justifyContent="center"
+      maxW="calc(100vw - 32px)"
       onMouseEnter={(e) => {
         e.stopPropagation()
       }}
@@ -55,12 +62,6 @@ export default function Tooltip({
       pos="absolute"
       px="10px"
       py="8px"
-      style={{
-        right:
-          tooltipRect && tooltipRect.x + tooltipRect.width > viewportWidth
-            ? '16px'
-            : 'unset',
-      }}
       transform="translateY(10px)"
       transition="all 0.3s ease-in-out"
     >
