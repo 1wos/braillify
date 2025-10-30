@@ -51,12 +51,6 @@ export default async function TestCasePage() {
       >
         {/* @todo 필터 관련 JSON 및 상태 관련 처리 */}
         <TestCaseDisplayBoundary option="filters" value={key}>
-          <Box
-            bg="$text"
-            display={isBut ? 'none' : 'block'}
-            h="1px"
-            mx={['16px', null, null, '60px']}
-          />
           <TestCaseRuleContainer key={key} exception={isBut}>
             <VStack gap="20px">
               <Flex
@@ -135,7 +129,14 @@ export default async function TestCasePage() {
             gap="12px"
             justifyContent={[null, null, null, 'space-between']}
           >
-            <Flex gap="10px" overflowX="auto" scrollbarWidth="none" w="100%">
+            <Flex
+              gap="10px"
+              overflowX="auto"
+              overflowY="visible"
+              pb="2px"
+              scrollbarWidth="none"
+              w="100%"
+            >
               {TEST_CASE_FILTERS.map((filter) => (
                 <TestCaseFilter key={filter.value} value={filter.value}>
                   {filter.label}
@@ -175,6 +176,7 @@ export default async function TestCasePage() {
               실패한 케이스만 표시하기
             </Text>
           </Flex>
+          <Box bg="$text" h="1px" />
         </TestCaseFilterContainer>
         {cases}
         <Box bg="$text" h="1px" mx={['16px', null, null, '60px']} />
