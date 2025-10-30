@@ -6,7 +6,6 @@ import { useEffect } from 'react'
 
 export default function Tooltip({ children }: { children: React.ReactNode }) {
   const [viewportWidth, setViewportWidth] = useState(0)
-  const [tooltipRect, setTooltipRect] = useState<DOMRect | null>(null)
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -24,17 +23,28 @@ export default function Tooltip({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  useEffect(() => {
-    if (ref.current) {
-      setTooltipRect(ref.current.getBoundingClientRect())
-    }
-
-    return () => setTooltipRect(null)
-  }, [])
-
   return (
     <VStack
-      ref={ref}
+      ref={(el) => {
+        if (!el) return
+
+        ref.current = el
+
+        const mo = new ResizeObserver((entries) => {
+          entries.forEach((entry) => {
+            const target = entry.target as HTMLDivElement
+            const x = target.offsetLeft
+            const width = target.offsetWidth
+            if (x + width > viewportWidth) {
+              target.style.right = '16px'
+            }
+          })
+        })
+
+        mo.observe(el)
+
+        return () => mo.disconnect()
+      }}
       _groupHover={{
         display: 'flex',
       }}
@@ -52,12 +62,6 @@ export default function Tooltip({ children }: { children: React.ReactNode }) {
       pos="absolute"
       px="10px"
       py="8px"
-      style={{
-        right:
-          tooltipRect && tooltipRect.x + tooltipRect.width > viewportWidth
-            ? '16px'
-            : 'unset',
-      }}
       transform="translateY(10px)"
       transition="all 0.3s ease-in-out"
     >
