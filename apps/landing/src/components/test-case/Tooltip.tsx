@@ -4,13 +4,7 @@ import { VStack } from '@devup-ui/react'
 import { useRef, useState } from 'react'
 import { useEffect } from 'react'
 
-export default function Tooltip({
-  children,
-  isOpen,
-}: {
-  children: React.ReactNode
-  isOpen: boolean
-}) {
+export default function Tooltip({ children }: { children: React.ReactNode }) {
   const [viewportWidth, setViewportWidth] = useState(0)
   const [tooltipRect, setTooltipRect] = useState<DOMRect | null>(null)
   const ref = useRef<HTMLDivElement>(null)
@@ -34,18 +28,21 @@ export default function Tooltip({
     if (ref.current) {
       setTooltipRect(ref.current.getBoundingClientRect())
     }
-  }, [isOpen])
+
+    return () => setTooltipRect(null)
+  }, [])
 
   return (
     <VStack
       ref={ref}
       _groupHover={{
-        display: isOpen ? 'flex' : 'none',
+        display: 'flex',
       }}
       bg="rgba(0, 0, 0, 0.75)"
       borderRadius="4px"
       display="none"
       justifyContent="center"
+      maxW="calc(100vw - 32px)"
       onMouseEnter={(e) => {
         e.stopPropagation()
       }}

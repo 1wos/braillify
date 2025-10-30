@@ -19,12 +19,7 @@ export function TestCaseList({ results }: { results: TestStatus[2] }) {
             value={Number(!isSuccess)}
           >
             <TestCaseCircle key={text + idx} isSuccess={isSuccess}>
-              <Text
-                color="#FFF"
-                typography="body"
-                whiteSpace="nowrap"
-                wordBreak="keep-all"
-              >
+              <Text color="#FFF" typography="body" whiteSpace="nowrap">
                 {textParts.map((part, partIdx) =>
                   part.type === 'latex' ? (
                     <Latex key={partIdx}>${part.content}$</Latex>
@@ -33,9 +28,9 @@ export function TestCaseList({ results }: { results: TestStatus[2] }) {
                   ),
                 )}
                 <br />
-                정답 : {expected}
+                정답 : <Text wordBreak="break-all">{expected}</Text>
                 <br />
-                결과 : {actual}
+                결과 : <Text wordBreak="break-all">{actual}</Text>
                 <br />
                 {isSuccess ? '✅ 테스트 성공' : '❌ 테스트 실패'}
               </Text>
