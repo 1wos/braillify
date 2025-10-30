@@ -609,8 +609,8 @@ mod test {
                 total += 1;
                 file_total += 1;
                 let error = format!(
-                    "CSV 레코드를 읽는 중 오류 발생: {:?} at {}",
-                    result, line_num
+                    "CSV 레코드를 읽는 중 오류 발생: {:?} at {} in {}",
+                    result, line_num, filename
                 );
                 let record = result.expect(&error);
                 let input = &record[0];
