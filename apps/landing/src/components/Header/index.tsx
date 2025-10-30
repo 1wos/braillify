@@ -27,14 +27,16 @@ export default function Header() {
   const pathname = usePathname()
 
   const isIntersectingHome = pathname === '/' && isIntersecting
+  const isTestCase = pathname === '/test-case'
 
   return (
     <>
       <Box
+        bg={isTestCase ? '$background' : 'transparent'}
         h={['60px', null, null, '100px']}
         left="0"
         p={['4px', null, null, '10px']}
-        position="fixed"
+        position="sticky"
         right="0"
         top="0"
         w="100%"
@@ -159,7 +161,7 @@ export default function Header() {
           </Flex>
         </Flex>
       </Box>
-      <Box ref={headerRef} h={['60px', null, null, '100px']} />
+      <Box ref={headerRef} h="0" />
       <Suspense>
         <MobileMenu />
       </Suspense>

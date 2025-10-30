@@ -1,4 +1,4 @@
-import { Box, css, globalCss, ThemeScript } from '@devup-ui/react'
+import { Box, globalCss, ThemeScript } from '@devup-ui/react'
 import type { Metadata } from 'next'
 
 import Footer from '@/components/Footer'
@@ -52,6 +52,13 @@ globalCss({
     maxWidth: '100vw',
     overflowX: 'hidden',
   },
+  body: {
+    maxHeight: '100vh',
+    background: '#373634',
+    WebkitFontSmoothing: 'antialiased',
+    MozOsxFontSmoothing: 'grayscale',
+    fontFamily: 'Spoqa Han Sans Neo, Arial, Helvetica, sans-serif',
+  },
   '*': {
     boxSizing: 'border-box',
     padding: 0,
@@ -59,6 +66,7 @@ globalCss({
   },
   a: {
     color: 'var(--link)',
+    textDecoration: 'none',
   },
   '::placeholder': {
     fontFamily: 'Spoqa Han Sans Neo, Arial, Helvetica, sans-serif',
@@ -86,22 +94,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         <ThemeScript auto />
         <link href="/favicon.svg" rel="shortcut icon" />
       </head>
-      <body
-        className={css({
-          background: '#373634',
-          WebkitFontSmoothing: 'antialiased',
-          MozOsxFontSmoothing: 'grayscale',
-          fontFamily: 'Spoqa Han Sans Neo, Arial, Helvetica, sans-serif',
-          selectors: {
-            '& a': {
-              textDecoration: 'none',
-            },
-            '& *::placeholder': {
-              fontFamily: 'Spoqa Han Sans Neo, Arial, Helvetica, sans-serif',
-            },
-          },
-        })}
-      >
+      <body>
         <noscript>
           <iframe
             height="0"
@@ -110,7 +103,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             width="0"
           />
         </noscript>
-        <Box bg="$background">
+        <Box bg="$background" pos="relative">
           <Header />
           {children}
         </Box>
