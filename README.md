@@ -1,4 +1,4 @@
-<div align="center" style="background:#efeeeb;padding:20px">
+<div align="center" style="background-color:#efeeeb;padding:20px">
   <img src="https://raw.githubusercontent.com/dev-five-git/braillify/main/media/logo.svg" alt="Braillify" width="300" />
 </div>
 
